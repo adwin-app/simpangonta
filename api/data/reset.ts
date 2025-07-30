@@ -18,7 +18,7 @@ const initialCompetitions = [
 
 const initialTeams = [
     { school: 'SMPN 1 Gondangwetan', teamName: 'Elang', type: 'Putra', coachName: 'Budi', coachPhone: '081234567890', members: ['Andi', 'Beni', 'Candra', 'Dedi', 'Eko', 'Fahmi', 'Gani', 'Hadi', 'Irfan', 'Joko']},
-    { school: 'SMPN 1 Gondangwetan', teamName: 'Melati', type: 'Putri', coachName: 'Siti', coachPhone: '081234567891', members: ['Ani', 'Bunga', 'Citra', 'Hanik', 'Eka', 'Fina', 'Gina', 'Hana', 'Indah', 'Jeni']},
+    { school: 'SMPN 1 Gondangwetan', teamName: 'Melati', type: 'Putri', coachName: 'Siti', coachPhone: '081234567891', members: ['Ani', 'Bunga', 'Citra', 'Dewi', 'Eka', 'Fina', 'Gina', 'Hana', 'Indah', 'Jeni']},
     { school: 'MTs Al-Hidayah', teamName: 'Harimau', type: 'Putra', coachName: 'Ahmad', coachPhone: '081234567892', members: ['Kiki', 'Lilo', 'Miko', 'Nano', 'Opik', 'Piko', 'Qori', 'Rian', 'Soni', 'Toni']},
     { school: 'MTs Al-Hidayah', teamName: 'Anggrek', type: 'Putri', coachName: 'Aisyah', coachPhone: '081234567893', members: ['Kikiwati', 'Lila', 'Mika', 'Nana', 'Opikah', 'Pika', 'Qoriah', 'Riani', 'Sonia', 'Toniwati']}
 ];

@@ -64,6 +64,24 @@ const addTeam = async (teamData: Omit<Team, 'id'>): Promise<Team> => {
     return handleResponse(response);
 };
 
+const updateTeam = async (id: string, teamData: Partial<Omit<Team, 'id'>>): Promise<Team> => {
+    const response = await fetch(`/api/teams`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...teamData }),
+    });
+    return handleResponse(response);
+};
+
+const deleteTeam = async (id: string): Promise<{ message: string }> => {
+    const response = await fetch(`/api/teams`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+    });
+    return handleResponse(response);
+};
+
 // Score API
 const getScores = async (competitionId: string, judgeId: string): Promise<Score[]> => {
     const response = await fetch(`/api/scores?competitionId=${competitionId}&judgeId=${judgeId}`);
@@ -170,6 +188,8 @@ export const apiService = {
     deleteCompetition,
     getTeams,
     addTeam,
+    updateTeam,
+    deleteTeam,
     getScores,
     addScore,
     getLeaderboard,

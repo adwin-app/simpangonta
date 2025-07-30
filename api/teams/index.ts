@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import connectMongo from '../../lib/mongodb';
 import TeamModel from '../../models/Team';
+import ScoreModel from '../../models/Score';
 import { Team } from '../../types';
 
 // Helper to convert DB document to a data transfer object (DTO) for the frontend
@@ -46,8 +47,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 res.status(500).json({ error: 'Error adding team' });
             }
             break;
+        case 'PUT':
+            try {
+                const { id, ...teamData } = req.body;
+                if (!id) {
+                    return res.status(400).json({ error: 'Team ID is required.' });
+                }
+                
+                const updatedTeam = await TeamModel.findByIdAndUpdate(id, teamData, { new: true });
+                
+                if (!updatedTeam) {
+                    return res.status(404).json({ error: 'Team not found.' });
+                }
+                
+                res.status(200).json(toTeamDTO(updatedTeam));
+            } catch (error: any) {
+                if (error.code === 11000) {
+                    return res.status(409).json({ error: `Kombinasi nama regu, sekolah, dan jenis yang Anda masukkan sudah ada.` });
+                }
+                res.status(500).json({ error: 'Error updating team' });
+            }
+            break;
+        case 'DELETE':
+            try {
+                const { id } = req.body;
+                if (!id) {
+                    return res.status(400).json({ error: 'Team ID is required.' });
+                }
+                
+                const deletedTeam = await TeamModel.findByIdAndDelete(id);
+                
+                if (!deletedTeam) {
+                    return res.status(404).json({ error: 'Team not found.' });
+                }
+
+                await ScoreModel.deleteMany({ teamId: id });
+                
+                res.status(200).json({ message: 'Regu dan semua skor terkait berhasil dihapus.' });
+            } catch (error) {
+                res.status(500).json({ error: 'Error deleting team' });
+            }
+            break;
         default:
-            res.setHeader('Allow', ['GET', 'POST']);
+            res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
             res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 }
