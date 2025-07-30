@@ -1,10 +1,11 @@
 
 
+
 import React, { useState, useContext } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../App';
 import { UserRole } from '../types';
-import { AppColors, AppRoutes, ScoutBadgeIcon, MenuIcon, CloseIcon, UserGroupIcon, ClipboardListIcon, ChartBarIcon, LogoutIcon } from '../constants';
+import { AppColors, AppRoutes, ScoutBadgeIcon, MenuIcon, CloseIcon, BuildingOfficeIcon } from '../constants';
 
 const Header: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -29,6 +30,7 @@ const Header: React.FC = () => {
             <NavLink to={AppRoutes.adminTeamList} className={getLinkClass}>Daftar Regu</NavLink>
             <NavLink to={AppRoutes.adminManageCompetitions} className={getLinkClass}>Kelola Lomba</NavLink>
             <NavLink to={AppRoutes.adminManageJudges} className={getLinkClass}>Kelola Juri</NavLink>
+            <NavLink to={AppRoutes.adminManageSchools} className={getLinkClass}>Kelola Sekolah</NavLink>
             <NavLink to={AppRoutes.adminRecap} className={getLinkClass}>Rekap Juara</NavLink>
         </>
     );
@@ -37,8 +39,13 @@ const Header: React.FC = () => {
         <NavLink to={AppRoutes.judgePortal} className={getLinkClass}>Input Nilai</NavLink>
     );
     
+    const schoolLinks = (
+         <NavLink to={AppRoutes.schoolDashboard} className={getLinkClass}>Dashboard Sekolah</NavLink>
+    );
+    
     const publicLinks = (
       <div className="flex items-center space-x-2">
+        <NavLink to={AppRoutes.schoolLogin} className={getLinkClass}>Login/Daftar Sekolah</NavLink>
         <NavLink to={AppRoutes.login} className={getLinkClass}>Login Juri</NavLink>
         <NavLink to={AppRoutes.adminLogin} className={getLinkClass}>Login Panitia</NavLink>
       </div>
@@ -49,9 +56,10 @@ const Header: React.FC = () => {
             {!auth?.role && publicLinks}
             {auth?.role === UserRole.ADMIN && adminLinks}
             {auth?.role === UserRole.JURI && judgeLinks}
+            {auth?.role === UserRole.SEKOLAH && schoolLinks}
             {auth?.role && (
                 <button onClick={handleLogout} className={`${baseLinkClasses} ${inactiveLinkClasses} flex items-center mt-2 md:mt-0`}>
-                    <LogoutIcon className="w-5 h-5 mr-1" /> Logout
+                    Logout
                 </button>
             )}
         </div>

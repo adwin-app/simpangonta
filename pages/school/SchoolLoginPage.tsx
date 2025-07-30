@@ -1,13 +1,12 @@
 import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../App';
-import { UserRole } from '../types';
-import { Card, Button, Input } from '../components/UI';
-import { AppRoutes, KeyIcon } from '../constants';
-import { apiService } from '../services/api';
+import { useNavigate, Link } from 'react-router-dom';
+import { Card, Button, Input } from '../../components/UI';
+import { AppRoutes, KeyIcon } from '../../constants';
+import { apiService } from '../../services/api';
+import { AuthContext } from '../../App';
 
-export const LoginPage: React.FC = () => {
-    const [username, setUsername] = useState('');
+export const SchoolLoginPage: React.FC = () => {
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -21,15 +20,15 @@ export const LoginPage: React.FC = () => {
         setIsLoggingIn(true);
         
         try {
-            const user = await apiService.judgeLogin({ username, password });
-            if (user && user.role === UserRole.JURI) {
-                auth?.login(user.role, user.id, { assignedCompetitionId: user.assignedCompetitionId });
-                navigate(AppRoutes.judgePortal);
+            const data = await apiService.schoolLogin({ email, password });
+            if (data && data.role) {
+                auth?.login(data.role, data.id, { schoolName: data.name });
+                navigate(AppRoutes.schoolDashboard);
             } else {
-                setError('Hanya juri yang dapat login di halaman ini.');
+                setError('Gagal login. Kredensial tidak valid.');
             }
         } catch (err: any) {
-            setError(err.message || 'Username atau password salah.');
+            setError(err.message || 'Email atau password salah.');
         } finally {
             setIsLoggingIn(false);
         }
@@ -40,26 +39,24 @@ export const LoginPage: React.FC = () => {
             <Card className="w-full max-w-md">
                 <div className="text-center mb-6">
                     <KeyIcon className="w-12 h-12 mx-auto text-gray-400" />
-                    <h2 className="text-2xl font-bold mt-2">Login Juri</h2>
-                    <p className="text-gray-500 text-sm">Masukkan kredensial yang diberikan panitia.</p>
+                    <h2 className="text-2xl font-bold mt-2">Login Sekolah</h2>
+                    <p className="text-gray-500 text-sm">Masuk untuk mengelola pendaftaran regu Anda.</p>
                 </div>
                 <form onSubmit={handleLogin} className="space-y-4">
                     <div>
-                        <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                         <Input
-                            id="username"
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             required
-                            autoComplete="username"
+                            autoComplete="email"
                         />
                     </div>
                     
                     <div>
-                        <label htmlFor="password-juri" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                          <Input
-                            id="password-juri"
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -74,6 +71,14 @@ export const LoginPage: React.FC = () => {
                         {isLoggingIn ? 'Memproses...' : 'Masuk'}
                     </Button>
                 </form>
+                <div className="text-center mt-4">
+                     <p className="text-sm text-gray-600">
+                        Belum punya akun?{' '}
+                        <Link to={AppRoutes.schoolRegister} className="font-medium text-green-600 hover:text-green-500">
+                            Daftar di sini
+                        </Link>
+                    </p>
+                </div>
             </Card>
         </div>
     );

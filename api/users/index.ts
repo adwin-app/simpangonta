@@ -44,11 +44,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                 const newUser = new UserModel({
                     username,
-                    password,
+                    password, // Password will be hashed by the pre-save hook in the model
                     role: UserRole.JURI,
                 });
                 await newUser.save();
-                res.status(201).json(toUserDTO(newUser));
+                
+                const userObject = newUser.toObject();
+                const { password: _, ...userWithoutPassword } = userObject;
+
+                res.status(201).json(toUserDTO(userWithoutPassword));
             } catch (error: any) {
                 if (error.code === 11000) {
                     return res.status(409).json({ error: 'A user with this username already exists.' });

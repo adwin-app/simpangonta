@@ -4,6 +4,7 @@ import CompetitionModel from '../../models/Competition';
 import TeamModel from '../../models/Team';
 import ScoreModel from '../../models/Score';
 import UserModel from '../../models/User';
+import SchoolModel from '../../models/School';
 import { v4 as uuidv4 } from 'uuid';
 import { UserRole } from '../../types';
 
@@ -39,11 +40,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await TeamModel.deleteMany({});
     await ScoreModel.deleteMany({});
     await UserModel.deleteMany({});
+    await SchoolModel.deleteMany({});
     
     // Seed new data
     await CompetitionModel.insertMany(initialCompetitions);
     await TeamModel.insertMany(initialTeams);
-    await UserModel.insertMany(initialUsers);
+    
+    // Manually create users to trigger password hashing
+    for (const userData of initialUsers) {
+        const user = new UserModel(userData);
+        await user.save();
+    }
     
     res.status(200).json({ message: 'Data reset and seeded successfully!' });
   } catch (error) {

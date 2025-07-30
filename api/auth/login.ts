@@ -16,14 +16,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(400).json({ error: 'Username and password are required' });
         }
 
-        const user = await UserModel.findOne({ username: username.toLowerCase() }).select('+password').lean();
+        const user = await UserModel.findOne({ username: username.toLowerCase() });
 
         if (!user) {
             return res.status(401).json({ error: 'Username atau password salah' });
         }
         
-        // Plain text password comparison (for this project's scope)
-        if (user.password !== password) {
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) {
             return res.status(401).json({ error: 'Username atau password salah' });
         }
         
@@ -32,11 +32,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         // Return user data without the password
-        const { password: _, ...userWithoutPassword } = user;
+        const userObject = user.toObject();
+        const { password: _, ...userWithoutPassword } = userObject;
 
         res.status(200).json({
             id: user._id.toString(),
-            ...userWithoutPassword
+            username: user.username,
+            role: user.role,
+            assignedCompetitionId: user.assignedCompetitionId,
         });
 
     } catch (error) {

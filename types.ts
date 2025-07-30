@@ -1,8 +1,10 @@
 
 
+
 export enum UserRole {
   ADMIN = 'ADMIN',
   JURI = 'JURI',
+  SEKOLAH = 'SEKOLAH',
 }
 
 export interface User {
@@ -11,6 +13,12 @@ export interface User {
     role: UserRole;
     assignedCompetitionId?: string;
     assignedCompetitionName?: string;
+}
+
+export interface School {
+  id: string;
+  name: string;
+  email: string;
 }
 
 export interface Criterion {
@@ -27,6 +35,7 @@ export interface Competition {
 export interface Team {
   id: string;
   school: string;
+  schoolId?: string; // Tautan ke model School
   teamName: string;
   type: 'Putra' | 'Putri';
   coachName: string;

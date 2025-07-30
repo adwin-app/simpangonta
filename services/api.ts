@@ -1,4 +1,4 @@
-import { Competition, Team, Score, LeaderboardEntry, UserRole, DashboardStats, Criterion, User } from '../types';
+import { Competition, Team, Score, LeaderboardEntry, UserRole, DashboardStats, Criterion, User, School } from '../types';
 
 const handleResponse = async (response: Response) => {
     if (!response.ok) {
@@ -15,6 +15,7 @@ const handleResponse = async (response: Response) => {
     return response.json();
 };
 
+// Competition API
 const getCompetitions = async (): Promise<Competition[]> => {
     const response = await fetch('/api/competitions');
     return handleResponse(response);
@@ -45,8 +46,10 @@ const deleteCompetition = async (id: string): Promise<{ message: string }> => {
     return handleResponse(response);
 };
 
-const getTeams = async (): Promise<Team[]> => {
-    const response = await fetch('/api/teams');
+// Team API
+const getTeams = async (schoolId?: string): Promise<Team[]> => {
+    const url = schoolId ? `/api/teams?schoolId=${schoolId}` : '/api/teams';
+    const response = await fetch(url);
     return handleResponse(response);
 };
 
@@ -59,6 +62,7 @@ const addTeam = async (teamData: Omit<Team, 'id'>): Promise<Team> => {
     return handleResponse(response);
 };
 
+// Score API
 const getScores = async (competitionId: string, judgeId: string): Promise<Score[]> => {
     const response = await fetch(`/api/scores?competitionId=${competitionId}&judgeId=${judgeId}`);
     return handleResponse(response);
@@ -73,6 +77,7 @@ const addScore = async (scoreData: Omit<Score, 'id'>): Promise<Score> => {
     return handleResponse(response);
 };
 
+// Misc API
 const getLeaderboard = async (type: 'Putra' | 'Putri'): Promise<LeaderboardEntry[]> => {
     const response = await fetch(`/api/leaderboard?type=${type}`);
     return handleResponse(response);
@@ -88,6 +93,7 @@ const resetData = async (): Promise<{ message: string }> => {
     return handleResponse(response);
 };
 
+// Judge Auth & Management API
 const judgeLogin = async (credentials: {username: string, password: string}): Promise<User> => {
     const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -127,6 +133,30 @@ const deleteUser = async (id: string): Promise<{ message: string }> => {
     return handleResponse(response);
 };
 
+// School Auth & Management API
+const schoolRegister = async (data: any): Promise<School> => {
+    const response = await fetch('/api/schools/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+};
+
+const schoolLogin = async (credentials: any): Promise<School & { role: UserRole }> => {
+    const response = await fetch('/api/schools/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+    });
+    return handleResponse(response);
+};
+
+const getSchools = async (): Promise<School[]> => {
+    const response = await fetch('/api/admin/schools');
+    return handleResponse(response);
+};
+
 
 export const apiService = {
     getCompetitions,
@@ -145,4 +175,7 @@ export const apiService = {
     addUser,
     updateUser,
     deleteUser,
+    schoolRegister,
+    schoolLogin,
+    getSchools,
 };
