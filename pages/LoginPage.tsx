@@ -1,20 +1,50 @@
 
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
-import { UserRole } from '../types';
+import { UserRole, Competition } from '../types';
 import { Card, Button, Select } from '../components/UI';
 import { AppRoutes } from '../constants';
+import { apiService } from '../services/api';
 
 export const LoginPage: React.FC = () => {
     const [selectedRole, setSelectedRole] = useState<UserRole>(UserRole.ADMIN);
-    const [judgeId, setJudgeId] = useState('Juri Tapak Kemah');
+    const [judgeId, setJudgeId] = useState('');
+    const [competitions, setCompetitions] = useState<Competition[]>([]);
+    const [loadingCompetitions, setLoadingCompetitions] = useState(false);
+    
     const auth = useContext(AuthContext);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (selectedRole === UserRole.JURI) {
+            setLoadingCompetitions(true);
+            setJudgeId('');
+            apiService.getCompetitions()
+                .then(data => {
+                    setCompetitions(data);
+                    if (data.length > 0) {
+                        setJudgeId(`Juri ${data[0].name}`); 
+                    }
+                })
+                .catch(err => {
+                    console.error("Failed to load competitions for judge login", err);
+                })
+                .finally(() => {
+                    setLoadingCompetitions(false);
+                });
+        }
+    }, [selectedRole]);
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
         const roleToLogin = selectedRole;
+        
+        if (roleToLogin === UserRole.JURI && !judgeId) {
+            alert("Tidak ada lomba yang tersedia untuk dinilai. Harap hubungi panitia.");
+            return;
+        }
+        
         const identifier = roleToLogin === UserRole.JURI ? judgeId : 'Admin';
         auth?.login(roleToLogin, identifier);
         
@@ -44,22 +74,29 @@ export const LoginPage: React.FC = () => {
                     
                     {selectedRole === UserRole.JURI && (
                         <div>
-                             <label htmlFor="judgeId" className="block text-sm font-medium text-gray-700 mb-1">Nama Juri</label>
+                             <label htmlFor="judgeId" className="block text-sm font-medium text-gray-700 mb-1">Pilih Lomba yang Dinilai</label>
                              <Select
                                 id="judgeId"
                                 value={judgeId}
                                 onChange={(e) => setJudgeId(e.target.value)}
+                                disabled={loadingCompetitions || competitions.length === 0}
                              >
-                                <option>Juri Tapak Kemah</option>
-                                <option>Juri Gelas Racing</option>
-                                <option>Juri KIM</option>
-                                <option>Juri Cerdas Cermat</option>
-                                <option>Juri Kuda Tuli</option>
+                                {loadingCompetitions ? (
+                                    <option>Memuat daftar lomba...</option>
+                                ) : competitions.length > 0 ? (
+                                    competitions.map(comp => (
+                                        <option key={comp.id} value={`Juri ${comp.name}`}>
+                                            Juri {comp.name}
+                                        </option>
+                                    ))
+                                ) : (
+                                    <option>Tidak ada lomba tersedia</option>
+                                )}
                              </Select>
                         </div>
                     )}
 
-                    <Button type="submit" className="w-full">
+                    <Button type="submit" className="w-full" disabled={selectedRole === UserRole.JURI && (!judgeId || loadingCompetitions)}>
                         Masuk
                     </Button>
                 </form>

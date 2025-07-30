@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import { AuthContext } from '../../App';
 import { apiService } from '../../services/api';
@@ -290,8 +291,13 @@ export const JudgePortalPage: React.FC = () => {
     };
     
     if (loading) return <div>Memuat data...</div>;
-    if (!auth?.identifier || !myCompetition) {
-        return <Card><div className="text-center p-8"><h2 className="text-xl font-bold text-red-600">Akses Ditolak</h2><p className="text-gray-600 mt-2">Tidak dapat mengidentifikasi juri atau lomba. Mohon login kembali.</p></div></Card>;
+
+    if (!auth?.identifier) {
+        return <Card><div className="text-center p-8"><h2 className="text-xl font-bold text-red-600">Akses Ditolak</h2><p className="text-gray-600 mt-2">Tidak dapat mengidentifikasi juri. Mohon login kembali.</p></div></Card>;
+    }
+    
+    if (!myCompetition) {
+        return <Card><div className="text-center p-8"><h2 className="text-xl font-bold text-red-600">Lomba Tidak Ditemukan</h2><p className="text-gray-600 mt-2">Lomba untuk juri "{auth.identifier}" tidak dapat ditemukan. Mohon pastikan lomba sudah terdaftar oleh panitia.</p></div></Card>;
     }
 
     return (
