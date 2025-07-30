@@ -18,17 +18,17 @@ ScoreSchema.index({ teamId: 1, competitionId: 1, judgeId: 1 }, { unique: true })
 
 
 ScoreSchema.virtual('id').get(function() {
-  return this._id.toHexString();
+  return this._id.toString();
 });
 
 ScoreSchema.set('toJSON', {
   virtuals: true,
   transform: (doc, ret) => {
-    delete ret._id;
-    delete ret.__v;
+    delete (ret as any)._id;
+    delete (ret as any).__v;
   }
 });
 
-const ScoreModel: Model<IScoreDocument> = mongoose.models.Score || mongoose.model<IScoreDocument>('Score', ScoreSchema);
+const ScoreModel: Model<IScoreDocument> = (mongoose.models.Score as Model<IScoreDocument>) || mongoose.model<IScoreDocument>('Score', ScoreSchema);
 
 export default ScoreModel;

@@ -14,17 +14,17 @@ const CompetitionSchema = new Schema<ICompetitionDocument>({
 });
 
 CompetitionSchema.virtual('id').get(function() {
-  return this._id.toHexString();
+  return this._id.toString();
 });
 
 CompetitionSchema.set('toJSON', {
   virtuals: true,
   transform: (doc, ret) => {
-    delete ret._id;
-    delete ret.__v;
+    delete (ret as any)._id;
+    delete (ret as any).__v;
   }
 });
 
-const CompetitionModel: Model<ICompetitionDocument> = mongoose.models.Competition || mongoose.model<ICompetitionDocument>('Competition', CompetitionSchema);
+const CompetitionModel: Model<ICompetitionDocument> = (mongoose.models.Competition as Model<ICompetitionDocument>) || mongoose.model<ICompetitionDocument>('Competition', CompetitionSchema);
 
 export default CompetitionModel;

@@ -34,7 +34,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                 const score = await ScoreModel.findOneAndUpdate(filter, update, options);
 
-                res.status(201).json(score.toJSON());
+                if (score) {
+                    res.status(201).json(score.toJSON());
+                } else {
+                    res.status(500).json({ error: 'Failed to save the score.' });
+                }
             } catch (error) {
                 res.status(500).json({ error: 'Error submitting score' });
             }

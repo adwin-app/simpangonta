@@ -13,18 +13,18 @@ const TeamSchema = new Schema<ITeamDocument>({
 });
 
 TeamSchema.virtual('id').get(function() {
-  return this._id.toHexString();
+  return this._id.toString();
 });
 
 TeamSchema.set('toJSON', {
   virtuals: true,
   transform: (doc, ret) => {
-    delete ret._id;
-    delete ret.__v;
+    delete (ret as any)._id;
+    delete (ret as any).__v;
   }
 });
 
 
-const TeamModel: Model<ITeamDocument> = mongoose.models.Team || mongoose.model<ITeamDocument>('Team', TeamSchema);
+const TeamModel: Model<ITeamDocument> = (mongoose.models.Team as Model<ITeamDocument>) || mongoose.model<ITeamDocument>('Team', TeamSchema);
 
 export default TeamModel;

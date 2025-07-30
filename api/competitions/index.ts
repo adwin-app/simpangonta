@@ -26,7 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const newCompetition = new CompetitionModel({ name, criteria: criteriaWithIds });
                 await newCompetition.save();
                 res.status(201).json(newCompetition.toJSON());
-            } catch (error) {
+            } catch (error: any) {
                 if (error.code === 11000) {
                     return res.status(409).json({ error: 'A competition with this name already exists.' });
                 }
