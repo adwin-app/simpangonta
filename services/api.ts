@@ -31,17 +31,19 @@ const addCompetition = async (name: string, criteria: {name: string}[]): Promise
 };
 
 const updateCompetition = async (id: string, updatedData: { name: string, criteria: Criterion[] }): Promise<Competition> => {
-     const response = await fetch(`/api/competitions/${id}`, {
+     const response = await fetch(`/api/competitions`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedData),
+        body: JSON.stringify({ id, ...updatedData }),
     });
     return handleResponse(response);
 }
 
 const deleteCompetition = async (id: string): Promise<{ message: string }> => {
-    const response = await fetch(`/api/competitions/${id}`, {
+    const response = await fetch(`/api/competitions`, {
         method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
     });
     return handleResponse(response);
 };
