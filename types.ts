@@ -5,13 +5,21 @@ export enum UserRole {
   JURI = 'JURI',
 }
 
+export interface User {
+    id: string;
+    username: string;
+    role: UserRole;
+    assignedCompetitionId?: string;
+    assignedCompetitionName?: string;
+}
+
 export interface Criterion {
   id: string;
   name: string;
 }
 
 export interface Competition {
-  id: string;
+  id:string;
   name: string;
   criteria: Criterion[];
 }

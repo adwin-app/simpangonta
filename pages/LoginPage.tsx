@@ -1,103 +1,78 @@
 
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
-import { UserRole, Competition } from '../types';
-import { Card, Button, Select } from '../components/UI';
-import { AppRoutes } from '../constants';
+import { UserRole } from '../types';
+import { Card, Button, Input } from '../components/UI';
+import { AppRoutes, KeyIcon } from '../constants';
 import { apiService } from '../services/api';
 
 export const LoginPage: React.FC = () => {
-    const [selectedRole, setSelectedRole] = useState<UserRole>(UserRole.ADMIN);
-    const [judgeId, setJudgeId] = useState('');
-    const [competitions, setCompetitions] = useState<Competition[]>([]);
-    const [loadingCompetitions, setLoadingCompetitions] = useState(false);
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
     
     const auth = useContext(AuthContext);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        if (selectedRole === UserRole.JURI) {
-            setLoadingCompetitions(true);
-            setJudgeId('');
-            apiService.getCompetitions()
-                .then(data => {
-                    setCompetitions(data);
-                    if (data.length > 0) {
-                        setJudgeId(`Juri ${data[0].name}`); 
-                    }
-                })
-                .catch(err => {
-                    console.error("Failed to load competitions for judge login", err);
-                })
-                .finally(() => {
-                    setLoadingCompetitions(false);
-                });
-        }
-    }, [selectedRole]);
-
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        const roleToLogin = selectedRole;
+        setError('');
+        setIsLoggingIn(true);
         
-        if (roleToLogin === UserRole.JURI && !judgeId) {
-            alert("Tidak ada lomba yang tersedia untuk dinilai. Harap hubungi panitia.");
-            return;
-        }
-        
-        const identifier = roleToLogin === UserRole.JURI ? judgeId : 'Admin';
-        auth?.login(roleToLogin, identifier);
-        
-        if (roleToLogin === UserRole.ADMIN) {
-            navigate(AppRoutes.adminDashboard);
-        } else {
-            navigate(AppRoutes.judgePortal);
+        try {
+            const user = await apiService.judgeLogin({ username, password });
+            if (user && user.role === UserRole.JURI) {
+                auth?.login(user.role, user.id, user.assignedCompetitionId);
+                navigate(AppRoutes.judgePortal);
+            } else {
+                setError('Hanya juri yang dapat login di halaman ini.');
+            }
+        } catch (err: any) {
+            setError(err.message || 'Username atau password salah.');
+        } finally {
+            setIsLoggingIn(false);
         }
     };
 
     return (
         <div className="flex justify-center items-center p-4">
             <Card className="w-full max-w-md">
-                <h2 className="text-2xl font-bold text-center mb-6">Login</h2>
-                <form onSubmit={handleLogin} className="space-y-6">
+                <div className="text-center mb-6">
+                    <KeyIcon className="w-12 h-12 mx-auto text-gray-400" />
+                    <h2 className="text-2xl font-bold mt-2">Login Juri</h2>
+                    <p className="text-gray-500 text-sm">Masukkan kredensial yang diberikan panitia.</p>
+                </div>
+                <form onSubmit={handleLogin} className="space-y-4">
                     <div>
-                        <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">Pilih Peran Anda</label>
-                        <Select
-                            id="role"
-                            value={selectedRole}
-                            onChange={(e) => setSelectedRole(e.target.value as UserRole)}
-                        >
-                            <option value={UserRole.ADMIN}>Panitia (Admin)</option>
-                            <option value={UserRole.JURI}>Juri</option>
-                        </Select>
+                        <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                        <Input
+                            id="username"
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            required
+                            autoComplete="username"
+                        />
                     </div>
                     
-                    {selectedRole === UserRole.JURI && (
-                        <div>
-                             <label htmlFor="judgeId" className="block text-sm font-medium text-gray-700 mb-1">Pilih Lomba yang Dinilai</label>
-                             <Select
-                                id="judgeId"
-                                value={judgeId}
-                                onChange={(e) => setJudgeId(e.target.value)}
-                                disabled={loadingCompetitions || competitions.length === 0}
-                             >
-                                {loadingCompetitions ? (
-                                    <option>Memuat daftar lomba...</option>
-                                ) : competitions.length > 0 ? (
-                                    competitions.map(comp => (
-                                        <option key={comp.id} value={`Juri ${comp.name}`}>
-                                            Juri {comp.name}
-                                        </option>
-                                    ))
-                                ) : (
-                                    <option>Tidak ada lomba tersedia</option>
-                                )}
-                             </Select>
-                        </div>
-                    )}
+                    <div>
+                        <label htmlFor="password-juri" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                         <Input
+                            id="password-juri"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            autoComplete="current-password"
+                         />
+                    </div>
+                    
+                    {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
-                    <Button type="submit" className="w-full" disabled={selectedRole === UserRole.JURI && (!judgeId || loadingCompetitions)}>
-                        Masuk
+                    <Button type="submit" className="w-full" disabled={isLoggingIn}>
+                        {isLoggingIn ? 'Memproses...' : 'Masuk'}
                     </Button>
                 </form>
             </Card>

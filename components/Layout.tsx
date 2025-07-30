@@ -1,9 +1,10 @@
 
+
 import React, { useState, useContext } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 import { UserRole } from '../types';
-import { AppColors, AppRoutes, ScoutBadgeIcon, MenuIcon, CloseIcon, TrophyIcon, UsersIcon, ClipboardListIcon, ChartBarIcon, LogoutIcon } from '../constants';
+import { AppColors, AppRoutes, ScoutBadgeIcon, MenuIcon, CloseIcon, UserGroupIcon, ClipboardListIcon, ChartBarIcon, LogoutIcon } from '../constants';
 
 const Header: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -12,7 +13,7 @@ const Header: React.FC = () => {
 
     const handleLogout = () => {
         auth?.logout();
-        navigate(AppRoutes.login);
+        navigate(AppRoutes.home);
     };
     
     const baseLinkClasses = "px-3 py-2 rounded-md text-sm font-medium transition-colors";
@@ -27,6 +28,7 @@ const Header: React.FC = () => {
             <NavLink to={AppRoutes.adminRegisterTeam} className={getLinkClass}>Pendaftaran</NavLink>
             <NavLink to={AppRoutes.adminTeamList} className={getLinkClass}>Daftar Regu</NavLink>
             <NavLink to={AppRoutes.adminManageCompetitions} className={getLinkClass}>Kelola Lomba</NavLink>
+            <NavLink to={AppRoutes.adminManageJudges} className={getLinkClass}>Kelola Juri</NavLink>
             <NavLink to={AppRoutes.adminRecap} className={getLinkClass}>Rekap Juara</NavLink>
         </>
     );
@@ -36,12 +38,15 @@ const Header: React.FC = () => {
     );
     
     const publicLinks = (
-        <NavLink to={AppRoutes.publicLeaderboard} className={getLinkClass}>Live Info Juara</NavLink>
+      <div className="flex items-center space-x-2">
+        <NavLink to={AppRoutes.login} className={getLinkClass}>Login Juri</NavLink>
+        <NavLink to={AppRoutes.adminLogin} className={getLinkClass}>Login Panitia</NavLink>
+      </div>
     );
 
     const navLinks = (
         <div className="flex flex-col md:flex-row md:items-center md:space-x-4">
-            {publicLinks}
+            {!auth?.role && publicLinks}
             {auth?.role === UserRole.ADMIN && adminLinks}
             {auth?.role === UserRole.JURI && judgeLinks}
             {auth?.role && (
@@ -53,7 +58,7 @@ const Header: React.FC = () => {
     );
 
     return (
-        <nav style={{ backgroundColor: AppColors.primary }} className="shadow-lg">
+        <nav style={{ backgroundColor: AppColors.primary }} className="shadow-lg no-print">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-20">
                     <div className="flex items-center">

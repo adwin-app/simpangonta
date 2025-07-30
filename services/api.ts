@@ -1,9 +1,16 @@
-import { Competition, Team, Score, LeaderboardEntry, UserRole, DashboardStats, Criterion } from '../types';
+import { Competition, Team, Score, LeaderboardEntry, UserRole, DashboardStats, Criterion, User } from '../types';
 
 const handleResponse = async (response: Response) => {
     if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText}`);
+        let errorJson;
+        try {
+            errorJson = JSON.parse(errorText);
+        } catch(e) {
+            // not a json error
+        }
+        const message = errorJson?.error || errorText || 'An unknown error occurred';
+        throw new Error(`API Error: ${response.status} ${response.statusText} - ${message}`);
     }
     return response.json();
 };
@@ -81,6 +88,46 @@ const resetData = async (): Promise<{ message: string }> => {
     return handleResponse(response);
 };
 
+const judgeLogin = async (credentials: {username: string, password: string}): Promise<User> => {
+    const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+    });
+    return handleResponse(response);
+};
+
+const getUsers = async (): Promise<User[]> => {
+    const response = await fetch('/api/users');
+    return handleResponse(response);
+};
+
+const addUser = async (userData: any): Promise<User> => {
+    const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+    });
+    return handleResponse(response);
+};
+
+const updateUser = async (id: string, updateData: any): Promise<User> => {
+    const response = await fetch(`/api/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData),
+    });
+    return handleResponse(response);
+};
+
+const deleteUser = async (id: string): Promise<{ message: string }> => {
+    const response = await fetch(`/api/users/${id}`, {
+        method: 'DELETE',
+    });
+    return handleResponse(response);
+};
+
+
 export const apiService = {
     getCompetitions,
     addCompetition,
@@ -93,4 +140,9 @@ export const apiService = {
     getLeaderboard,
     getDashboardStats,
     resetData,
+    judgeLogin,
+    getUsers,
+    addUser,
+    updateUser,
+    deleteUser,
 };

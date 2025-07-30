@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import { AuthContext } from '../../App';
 import { apiService } from '../../services/api';
@@ -110,24 +111,24 @@ export const JudgePortalPage: React.FC = () => {
 
     useEffect(() => {
         const loadData = async () => {
-            if (!auth?.identifier) {
+            if (!auth?.identifier || !auth.assignedCompetitionId) {
                 setLoading(false);
                 return;
             }
 
             try {
-                const competitionNameFromJudgeId = auth.identifier.replace('Juri ', '').toLowerCase();
-                const allCompetitions = await apiService.getCompetitions();
-                const foundCompetition = allCompetitions.find(c => c.name.toLowerCase() === competitionNameFromJudgeId);
+                const competitionId = auth.assignedCompetitionId;
+                
+                const [allCompetitions, allTeams, judgeScores] = await Promise.all([
+                    apiService.getCompetitions(),
+                    apiService.getTeams(),
+                    apiService.getScores(competitionId, auth.identifier)
+                ]);
 
+                const foundCompetition = allCompetitions.find(c => c.id === competitionId);
+                
                 if (foundCompetition) {
                     setMyCompetition(foundCompetition);
-                    
-                    const [allTeams, judgeScores] = await Promise.all([
-                        apiService.getTeams(),
-                        apiService.getScores(foundCompetition.id, auth.identifier)
-                    ]);
-
                     setPutraTeams(allTeams.filter(t => t.type === 'Putra'));
                     setPutriTeams(allTeams.filter(t => t.type === 'Putri'));
                     
@@ -156,7 +157,7 @@ export const JudgePortalPage: React.FC = () => {
         };
 
         loadData();
-    }, [auth?.identifier]);
+    }, [auth?.identifier, auth?.assignedCompetitionId]);
 
     const handleInputChange = (teamId: string, criterionId: string, value: string) => {
         setScoreInputs(prev => ({
@@ -222,7 +223,7 @@ export const JudgePortalPage: React.FC = () => {
         const totalScore = Object.values(scoresByCriterionNum).reduce((acc, val) => acc + val, 0);
 
         try {
-            const savedScore = await apiService.addScore({
+            await apiService.addScore({
                 teamId,
                 competitionId: myCompetition.id,
                 judgeId: auth.identifier,
@@ -231,9 +232,7 @@ export const JudgePortalPage: React.FC = () => {
                 notes: currentInput.notes,
             });
             
-            // Update original scores so cancel works correctly next time
             setOriginalScores(prev => ({ ...prev, [teamId]: currentInput }));
-
             setRowMessage({ teamId, text: 'Tersimpan!', isError: false });
             setTimeout(() => setRowMessage(null), 3000);
             setEditingTeamId(null);
@@ -293,11 +292,11 @@ export const JudgePortalPage: React.FC = () => {
     if (loading) return <div>Memuat data...</div>;
 
     if (!auth?.identifier) {
-        return <Card><div className="text-center p-8"><h2 className="text-xl font-bold text-red-600">Akses Ditolak</h2><p className="text-gray-600 mt-2">Tidak dapat mengidentifikasi juri. Mohon login kembali.</p></div></Card>;
+        return <Card><div className="text-center p-8"><h2 className="text-xl font-bold text-red-600">Akses Ditolak</h2><p className="text-gray-600 mt-2">Sesi tidak valid. Mohon login kembali.</p></div></Card>;
     }
     
     if (!myCompetition) {
-        return <Card><div className="text-center p-8"><h2 className="text-xl font-bold text-red-600">Lomba Tidak Ditemukan</h2><p className="text-gray-600 mt-2">Lomba untuk juri "{auth.identifier}" tidak dapat ditemukan. Mohon pastikan lomba sudah terdaftar oleh panitia.</p></div></Card>;
+        return <Card><div className="text-center p-8"><h2 className="text-xl font-bold text-yellow-600">Belum Ada Tugas</h2><p className="text-gray-600 mt-2">Anda belum ditugaskan untuk menilai lomba apapun. Mohon hubungi panitia.</p></div></Card>;
     }
 
     return (

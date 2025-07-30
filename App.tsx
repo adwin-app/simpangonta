@@ -4,10 +4,11 @@ import { UserRole } from './types';
 import { AppRoutes } from './constants';
 
 import { Layout } from './components/Layout';
-import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
+import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { ManageCompetitionsPage } from './pages/admin/ManageCompetitionsPage';
+import { ManageJudgesPage } from './pages/admin/ManageJudgesPage';
 import { RegisterTeamPage } from './pages/admin/RegisterTeamPage';
 import { AdminRecapPage } from './pages/admin/AdminRecapPage';
 import { TeamListPage } from './pages/admin/TeamListPage';
@@ -17,7 +18,8 @@ import { PublicLeaderboardPage } from './pages/public/PublicLeaderboardPage';
 interface AuthContextType {
     role: UserRole | null;
     identifier: string | null;
-    login: (role: UserRole, identifier: string) => void;
+    assignedCompetitionId: string | null;
+    login: (role: UserRole, identifier: string, assignedCompetitionId?: string) => void;
     logout: () => void;
 }
 
@@ -36,22 +38,29 @@ const ProtectedRoute: React.FC<{ allowedRoles: UserRole[] }> = ({ allowedRoles }
 const App: React.FC = () => {
     const [role, setRole] = useState<UserRole | null>(() => localStorage.getItem('simpan-gonta-role') as UserRole | null);
     const [identifier, setIdentifier] = useState<string | null>(() => localStorage.getItem('simpan-gonta-identifier'));
+    const [assignedCompetitionId, setAssignedCompetitionId] = useState<string | null>(() => localStorage.getItem('simpan-gonta-assignedCompetitionId'));
 
-    const login = useCallback((userRole: UserRole, userIdentifier: string) => {
+    const login = useCallback((userRole: UserRole, userIdentifier: string, userAssignedCompetitionId?: string) => {
         localStorage.setItem('simpan-gonta-role', userRole);
         localStorage.setItem('simpan-gonta-identifier', userIdentifier);
         setRole(userRole);
         setIdentifier(userIdentifier);
+        if (userAssignedCompetitionId) {
+            localStorage.setItem('simpan-gonta-assignedCompetitionId', userAssignedCompetitionId);
+            setAssignedCompetitionId(userAssignedCompetitionId);
+        }
     }, []);
 
     const logout = useCallback(() => {
         localStorage.removeItem('simpan-gonta-role');
         localStorage.removeItem('simpan-gonta-identifier');
+        localStorage.removeItem('simpan-gonta-assignedCompetitionId');
         setRole(null);
         setIdentifier(null);
+        setAssignedCompetitionId(null);
     }, []);
 
-    const authContextValue = useMemo(() => ({ role, identifier, login, logout }), [role, identifier, login, logout]);
+    const authContextValue = useMemo(() => ({ role, identifier, assignedCompetitionId, login, logout }), [role, identifier, assignedCompetitionId, login, logout]);
 
     return (
         <AuthContext.Provider value={authContextValue}>
@@ -59,14 +68,16 @@ const App: React.FC = () => {
                 <Layout>
                     <Routes>
                         {/* Public Routes */}
-                        <Route path={AppRoutes.home} element={<HomePage />} />
+                        <Route path={AppRoutes.home} element={<PublicLeaderboardPage />} />
                         <Route path={AppRoutes.login} element={<LoginPage />} />
+                        <Route path={AppRoutes.adminLogin} element={<AdminLoginPage />} />
                         <Route path={AppRoutes.publicLeaderboard} element={<PublicLeaderboardPage />} />
 
                         {/* Admin Routes */}
                         <Route element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]} />}>
                             <Route path={AppRoutes.adminDashboard} element={<AdminDashboard />} />
                             <Route path={AppRoutes.adminManageCompetitions} element={<ManageCompetitionsPage />} />
+                            <Route path={AppRoutes.adminManageJudges} element={<ManageJudgesPage />} />
                             <Route path={AppRoutes.adminRegisterTeam} element={<RegisterTeamPage />} />
                             <Route path={AppRoutes.adminRecap} element={<AdminRecapPage />} />
                             <Route path={AppRoutes.adminTeamList} element={<TeamListPage />} />

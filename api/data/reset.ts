@@ -3,10 +3,12 @@ import connectMongo from '../../lib/mongodb';
 import CompetitionModel from '../../models/Competition';
 import TeamModel from '../../models/Team';
 import ScoreModel from '../../models/Score';
+import UserModel from '../../models/User';
 import { v4 as uuidv4 } from 'uuid';
+import { UserRole } from '../../types';
 
 const initialCompetitions = [
-  { name: 'tapak kemah', criteria: [{id: uuidv4(), name: 'Kerapian'}, {id: uuidv4(), name: 'Kekuatan'}, {id: uuidv4(), name: 'Fungsi'}] },
+  { name: 'Tapak Kemah', criteria: [{id: uuidv4(), name: 'Kerapian'}, {id: uuidv4(), name: 'Kekuatan'}, {id: uuidv4(), name: 'Fungsi'}] },
   { name: 'Gelas Racing', criteria: [{id: uuidv4(), name: 'Kecepatan'}, {id: uuidv4(), name: 'Keseimbangan'}] },
   { name: 'KIM', criteria: [{id: uuidv4(), name: 'Ketepatan'}] },
   { name: 'Cerdas Cermat', criteria: [{id: uuidv4(), name: 'Skor'}] },
@@ -20,6 +22,10 @@ const initialTeams = [
     { school: 'MTs Al-Hidayah', teamName: 'Anggrek', type: 'Putri', coachName: 'Aisyah', coachPhone: '081234567893', members: ['Kikiwati', 'Lila', 'Mika', 'Nana', 'Opikah', 'Pika', 'Qoriah', 'Riani', 'Sonia', 'Toniwati']}
 ];
 
+const initialUsers = [
+    { username: 'juri1', password: 'juri1', role: UserRole.JURI }
+]
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
@@ -32,10 +38,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await CompetitionModel.deleteMany({});
     await TeamModel.deleteMany({});
     await ScoreModel.deleteMany({});
+    await UserModel.deleteMany({});
     
     // Seed new data
     await CompetitionModel.insertMany(initialCompetitions);
     await TeamModel.insertMany(initialTeams);
+    await UserModel.insertMany(initialUsers);
     
     res.status(200).json({ message: 'Data reset and seeded successfully!' });
   } catch (error) {
