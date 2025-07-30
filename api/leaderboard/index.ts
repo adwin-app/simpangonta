@@ -93,11 +93,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }));
         
         teamListForRanking.sort((a, b) => {
+            // Standard medal count sorting: Gold > Silver > Bronze
             if (a.medals.gold !== b.medals.gold) return b.medals.gold - a.medals.gold;
-            if (a.medals.bronze !== b.medals.bronze) return b.medals.bronze - a.medals.bronze;
             if (a.medals.silver !== b.medals.silver) return b.medals.silver - a.medals.silver;
+            if (a.medals.bronze !== b.medals.bronze) return b.medals.bronze - a.medals.bronze;
+            // Specific tie-breaker from competition rules
             if (a.tapakKemahScore !== b.tapakKemahScore) return b.tapakKemahScore - a.tapakKemahScore;
-            return 0;
+            // Final tie-breaker: total score across all competitions
+            if (a.totalScore !== b.totalScore) return b.totalScore - a.totalScore;
+            return 0; // Teams are tied
         });
         
         const finalLeaderboard = teamListForRanking.map((entry, index) => ({

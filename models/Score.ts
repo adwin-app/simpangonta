@@ -24,7 +24,7 @@ ScoreSchema.virtual('id').get(function(this: IScoreDocument) {
 ScoreSchema.set('toJSON', {
   virtuals: true,
   versionKey: false,
-  transform: function (_doc: Document, ret: Record<string, any>) {
+  transform: function (doc: any, ret: any) {
     delete ret._id;
   }
 });
