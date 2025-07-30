@@ -18,7 +18,7 @@ TeamSchema.virtual('id').get(function(this: ITeamDocument) {
 
 TeamSchema.set('toJSON', {
   virtuals: true,
-  transform: (doc: any, ret: any) => {
+  transform: (_doc: Document, ret: Record<string, any>) => {
     delete ret._id;
     delete ret.__v;
   }

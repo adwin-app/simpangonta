@@ -23,7 +23,7 @@ ScoreSchema.virtual('id').get(function(this: IScoreDocument) {
 
 ScoreSchema.set('toJSON', {
   virtuals: true,
-  transform: (doc: any, ret: any) => {
+  transform: (_doc: Document, ret: Record<string, any>) => {
     delete ret._id;
     delete ret.__v;
   }
