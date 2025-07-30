@@ -19,9 +19,9 @@ CompetitionSchema.virtual('id').get(function(this: ICompetitionDocument) {
 
 CompetitionSchema.set('toJSON', {
   virtuals: true,
-  transform: (_doc: Document, ret: Record<string, any>) => {
+  versionKey: false,
+  transform: function (_doc: Document, ret: Record<string, any>) {
     delete ret._id;
-    delete ret.__v;
   }
 });
 
