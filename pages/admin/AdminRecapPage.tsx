@@ -63,12 +63,64 @@ const LeaderboardTable: React.FC<{ leaderboard: LeaderboardEntry[], competitions
     );
 };
 
+const ResetDataModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onReset: (mode?: 'clean') => Promise<void>;
+    isResetting: boolean;
+}> = ({ isOpen, onClose, onReset, isResetting }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4">
+            <Card className="w-full max-w-lg">
+                <h2 className="text-xl font-bold mb-4">Pilih Tipe Reset Data</h2>
+                <p className="text-gray-600 mb-6">Pilih salah satu opsi di bawah ini. Tindakan ini tidak dapat dibatalkan.</p>
+                
+                <div className="space-y-4">
+                    <div className="border border-yellow-300 bg-yellow-50 p-4 rounded-lg">
+                        <h3 className="font-semibold text-yellow-800">Reset dengan Data Uji Coba</h3>
+                        <p className="text-sm text-yellow-700 mt-1 mb-3">Hapus semua data saat ini dan isi kembali dengan data contoh (regu, juri, dll). Berguna untuk pengujian atau demonstrasi.</p>
+                        <Button
+                            onClick={() => onReset()}
+                            disabled={isResetting}
+                            variant="secondary"
+                            className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                        >
+                            {isResetting ? 'Mereset...' : 'Reset & Isi Data Uji'}
+                        </Button>
+                    </div>
+
+                    <div className="border border-red-300 bg-red-50 p-4 rounded-lg">
+                        <h3 className="font-semibold text-red-800">Hapus Semua Data (Mulai Lomba Baru)</h3>
+                        <p className="text-sm text-red-700 mt-1 mb-3">Menghapus SELURUH data (lomba, regu, juri, sekolah, skor). Gunakan opsi ini untuk membersihkan database sebelum acara dimulai.</p>
+                         <Button
+                            onClick={() => onReset('clean')}
+                            disabled={isResetting}
+                            className="!bg-red-600 hover:!bg-red-700 focus:ring-red-500"
+                        >
+                            {isResetting ? 'Menghapus...' : 'Hapus Semua Data'}
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="mt-6 text-right">
+                    <Button variant="secondary" onClick={onClose} disabled={isResetting}>
+                        Batal
+                    </Button>
+                </div>
+            </Card>
+        </div>
+    );
+};
+
 export const AdminRecapPage: React.FC = () => {
     const [putraLeaderboard, setPutraLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [putriLeaderboard, setPutriLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [competitions, setCompetitions] = useState<Competition[]>([]);
     const [loading, setLoading] = useState(true);
     const [isResetting, setIsResetting] = useState(false);
+    const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -93,21 +145,20 @@ export const AdminRecapPage: React.FC = () => {
         loadData();
     }, [loadData]);
 
-    const handleReset = async () => {
-        if(window.confirm("Apakah Anda yakin ingin mereset semua data? Tindakan ini akan menghapus semua nilai dan mengembalikan data ke keadaan awal.")) {
-            setIsResetting(true);
-            try {
-                await apiService.resetData();
-                await loadData(); // Reload data after reset
-                alert("Data berhasil direset.");
-            } catch (error) {
-                 console.error("Failed to reset data:", error);
-                 alert("Gagal mereset data.");
-            } finally {
-                setIsResetting(false);
-            }
+    const handleReset = async (mode?: 'clean') => {
+        setIsResetting(true);
+        try {
+            const result = await apiService.resetData(mode);
+            await loadData(); // Reload data after reset
+            alert(result.message);
+        } catch (error: any) {
+             console.error("Failed to reset data:", error);
+             alert(`Gagal mereset data: ${error.message}`);
+        } finally {
+            setIsResetting(false);
+            setIsResetModalOpen(false);
         }
-    }
+    };
 
     const handlePrint = () => {
         window.print();
@@ -122,7 +173,7 @@ export const AdminRecapPage: React.FC = () => {
                         <PrinterIcon className="w-5 h-5 mr-2" />
                         Cetak Rekap
                     </Button>
-                    <Button onClick={handleReset} variant="secondary" disabled={isResetting}>
+                    <Button onClick={() => setIsResetModalOpen(true)} variant="secondary" disabled={isResetting}>
                         {isResetting ? 'Mereset...' : 'Reset Data'}
                     </Button>
                 </div>
@@ -147,6 +198,12 @@ export const AdminRecapPage: React.FC = () => {
                     </section>
                 </div>
             )}
+             <ResetDataModal 
+                isOpen={isResetModalOpen}
+                onClose={() => setIsResetModalOpen(false)}
+                onReset={handleReset}
+                isResetting={isResetting}
+            />
         </div>
     );
 };

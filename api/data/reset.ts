@@ -35,14 +35,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     await connectMongo();
     
-    // Clear existing data
+    const { mode } = req.query;
+
+    // Clear existing data, always
     await CompetitionModel.deleteMany({});
     await TeamModel.deleteMany({});
     await ScoreModel.deleteMany({});
     await UserModel.deleteMany({});
     await SchoolModel.deleteMany({});
     
-    // Seed new data
+    if (mode === 'clean') {
+        return res.status(200).json({ message: 'Seluruh data aplikasi telah berhasil dibersihkan.' });
+    }
+    
+    // Default behavior: seed new data
     await CompetitionModel.insertMany(initialCompetitions);
     await TeamModel.insertMany(initialTeams);
     
@@ -52,9 +58,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await user.save();
     }
     
-    res.status(200).json({ message: 'Data reset and seeded successfully!' });
+    res.status(200).json({ message: 'Data berhasil direset dan diisi dengan data uji coba!' });
   } catch (error) {
     console.error('Data reset failed:', error);
-    res.status(500).json({ message: 'Failed to reset data', error });
+    res.status(500).json({ message: 'Gagal mereset data', error });
   }
 }

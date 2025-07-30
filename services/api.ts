@@ -90,8 +90,9 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
     return handleResponse(response);
 };
 
-const resetData = async (): Promise<{ message: string }> => {
-    const response = await fetch('/api/data/reset', { method: 'POST' });
+const resetData = async (mode?: 'clean'): Promise<{ message: string }> => {
+    const url = mode === 'clean' ? '/api/data/reset?mode=clean' : '/api/data/reset';
+    const response = await fetch(url, { method: 'POST' });
     return handleResponse(response);
 };
 
