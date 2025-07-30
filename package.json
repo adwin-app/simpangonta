@@ -1,0 +1,8 @@
+{
+  "name": "simpan-gonta-online",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "mongoose": "^8.4.1"
+  }
+}

@@ -1,0 +1,30 @@
+import mongoose, { Schema, Document, Model } from 'mongoose';
+import { Competition as ICompetition, Criterion } from '../types';
+
+const CriterionSchema = new Schema<Criterion>({
+  id: { type: String, required: true },
+  name: { type: String, required: true },
+}, { _id: false });
+
+export interface ICompetitionDocument extends Omit<ICompetition, 'id'>, Document {}
+
+const CompetitionSchema = new Schema<ICompetitionDocument>({
+  name: { type: String, required: true, unique: true },
+  criteria: { type: [CriterionSchema], required: true },
+});
+
+CompetitionSchema.virtual('id').get(function() {
+  return this._id.toHexString();
+});
+
+CompetitionSchema.set('toJSON', {
+  virtuals: true,
+  transform: (doc, ret) => {
+    delete ret._id;
+    delete ret.__v;
+  }
+});
+
+const CompetitionModel: Model<ICompetitionDocument> = mongoose.models.Competition || mongoose.model<ICompetitionDocument>('Competition', CompetitionSchema);
+
+export default CompetitionModel;
