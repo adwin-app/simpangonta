@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Competition } from '../../types';
 
 // Helper to convert DB document to a data transfer object (DTO) for the frontend
-const toCompetitionDTO = (comp: ICompetitionDocument): Competition => ({
+const toCompetitionDTO = (comp: any): Competition => ({
     id: comp._id.toString(),
     name: comp.name,
     criteria: comp.criteria.map((c: any) => ({ id: c.id, name: c.name })),
