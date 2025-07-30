@@ -1,11 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import connectMongo from '../../lib/mongodb';
-import CompetitionModel from '../../models/Competition';
+import CompetitionModel, { ICompetitionDocument } from '../../models/Competition';
 import { v4 as uuidv4 } from 'uuid';
 import { Competition } from '../../types';
 
 // Helper to convert DB document to a data transfer object (DTO) for the frontend
-const toCompetitionDTO = (comp: any): Competition => ({
+const toCompetitionDTO = (comp: ICompetitionDocument): Competition => ({
     id: comp._id.toString(),
     name: comp.name,
     criteria: comp.criteria.map((c: any) => ({ id: c.id, name: c.name })),

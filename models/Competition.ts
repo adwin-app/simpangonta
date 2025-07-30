@@ -6,9 +6,12 @@ const CriterionSchema = new Schema<Criterion>({
   name: { type: String, required: true },
 }, { _id: false });
 
-export interface ICompetitionDocument extends Omit<ICompetition, 'id'>, Document {}
+export interface ICompetitionDocument extends Document {
+  name: string;
+  criteria: Criterion[];
+}
 
-const CompetitionSchema = new Schema<ICompetitionDocument>({
+const CompetitionSchema = new Schema({
   name: { type: String, required: true, unique: true },
   criteria: { type: [CriterionSchema], required: true },
 });

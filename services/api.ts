@@ -31,6 +31,13 @@ const updateCompetition = async (id: string, updatedData: { name: string, criter
     return handleResponse(response);
 }
 
+const deleteCompetition = async (id: string): Promise<{ message: string }> => {
+    const response = await fetch(`/api/competitions/${id}`, {
+        method: 'DELETE',
+    });
+    return handleResponse(response);
+};
+
 const getTeams = async (): Promise<Team[]> => {
     const response = await fetch('/api/teams');
     return handleResponse(response);
@@ -78,6 +85,7 @@ export const apiService = {
     getCompetitions,
     addCompetition,
     updateCompetition,
+    deleteCompetition,
     getTeams,
     addTeam,
     getScores,

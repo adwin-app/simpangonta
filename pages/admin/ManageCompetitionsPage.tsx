@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { apiService } from '../../services/api';
 import { Competition, Criterion } from '../../types';
 import { Card, Button, Input } from '../../components/UI';
-import { PlusCircleIcon, TrophyIcon, CloseIcon } from '../../constants';
+import { PlusCircleIcon, TrophyIcon, CloseIcon, PencilIcon, TrashIcon } from '../../constants';
 
 const EditCompetitionModal: React.FC<{
     competition: Competition;
@@ -28,22 +28,30 @@ const EditCompetitionModal: React.FC<{
     };
 
     const handleSave = async () => {
-        if (name.trim() && criteria.every(c => c.name.trim())) {
-            setIsSaving(true);
-            try {
-                const finalCriteria = criteria.map(c => ({...c, name: c.name.trim()}));
-                // Note: The API for update is not implemented in this example.
-                // await apiService.updateCompetition(competition.id, { name: name.trim(), criteria: finalCriteria });
-                alert("Fungsi update belum diimplementasikan di API.");
-                onSave();
-            } catch (error) {
-                console.error("Failed to update competition", error);
-                alert("Gagal menyimpan perubahan.");
-            } finally {
-                setIsSaving(false);
+        const finalCriteria = criteria
+            .map(c => ({ ...c, name: c.name.trim() }))
+            .filter(c => c.name.trim() !== '');
+
+        if (!name.trim() || finalCriteria.length === 0) {
+            alert("Nama lomba dan minimal satu kriteria wajib diisi.");
+            return;
+        }
+        
+        if (finalCriteria.length < criteria.length) {
+            if (!window.confirm("Beberapa kriteria kosong dan akan dihapus. Lanjutkan?")) {
+                return;
             }
-        } else {
-            alert("Nama lomba dan semua nama kriteria wajib diisi.");
+        }
+
+        setIsSaving(true);
+        try {
+            await apiService.updateCompetition(competition.id, { name: name.trim(), criteria: finalCriteria });
+            onSave();
+        } catch (error: any) {
+            console.error("Failed to update competition", error);
+            alert(`Gagal menyimpan perubahan: ${error.message}`);
+        } finally {
+            setIsSaving(false);
         }
     };
     
@@ -134,7 +142,7 @@ export const ManageCompetitionsPage: React.FC = () => {
                 setNewCompetitionName('');
                 setNewCriteria([{ name: '' }]);
                 fetchCompetitions();
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Failed to add competition:", error);
                 alert(`Gagal menambah lomba: ${error.message}`);
             } finally {
@@ -142,6 +150,19 @@ export const ManageCompetitionsPage: React.FC = () => {
             }
         } else {
             alert("Nama lomba dan minimal satu kriteria wajib diisi.");
+        }
+    };
+
+    const handleDelete = async (id: string, name: string) => {
+        if (window.confirm(`Apakah Anda yakin ingin menghapus lomba "${name}"? Tindakan ini tidak dapat dibatalkan dan akan menghapus semua nilai yang terkait.`)) {
+            try {
+                await apiService.deleteCompetition(id);
+                alert(`Lomba "${name}" berhasil dihapus.`);
+                fetchCompetitions();
+            } catch (error: any) {
+                console.error("Failed to delete competition:", error);
+                alert(`Gagal menghapus lomba: ${error.message}`);
+            }
         }
     };
 
@@ -213,7 +234,14 @@ export const ManageCompetitionsPage: React.FC = () => {
                                             </ul>
                                         </div>
                                     </div>
-                                    {/* <Button variant="secondary" className="py-1 px-3 text-sm" onClick={() => setEditingCompetition(comp)}>Edit</Button> */}
+                                    <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                                         <Button variant="secondary" className="py-1 px-3 text-sm flex items-center" onClick={() => setEditingCompetition(comp)}>
+                                             <PencilIcon className="w-4 h-4 mr-1"/> Edit
+                                         </Button>
+                                         <Button variant="secondary" className="!bg-red-500 hover:!bg-red-600 text-white py-1 px-3 text-sm flex items-center" onClick={() => handleDelete(comp.id, comp.name)}>
+                                            <TrashIcon className="w-4 h-4 mr-1"/> Hapus
+                                         </Button>
+                                    </div>
                                 </div>
                             </li>
                         ))}
