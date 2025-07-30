@@ -11,7 +11,7 @@ export const AdminLoginPage: React.FC = () => {
     const auth = useContext(AuthContext);
     const navigate = useNavigate();
     
-    const ADMIN_PASSWORD = 'kwarcapgonta';
+    const ADMIN_PASSWORD = 'kwarrangonta';
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
