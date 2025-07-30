@@ -13,18 +13,6 @@ const CompetitionSchema = new Schema<ICompetitionDocument>({
   criteria: { type: [CriterionSchema], required: true },
 });
 
-CompetitionSchema.virtual('id').get(function(this: ICompetitionDocument) {
-  return this._id.toString();
-});
-
-CompetitionSchema.set('toJSON', {
-  virtuals: true,
-  versionKey: false,
-  transform: function (doc: any, ret: any) {
-    delete ret._id;
-  }
-});
-
 const CompetitionModel: Model<ICompetitionDocument> = (mongoose.models.Competition as Model<ICompetitionDocument>) || mongoose.model<ICompetitionDocument>('Competition', CompetitionSchema);
 
 export default CompetitionModel;

@@ -12,19 +12,6 @@ const TeamSchema = new Schema<ITeamDocument>({
   members: { type: [String], required: true },
 });
 
-TeamSchema.virtual('id').get(function(this: ITeamDocument) {
-  return this._id.toString();
-});
-
-TeamSchema.set('toJSON', {
-  virtuals: true,
-  versionKey: false,
-  transform: function (doc: any, ret: any) {
-    delete ret._id;
-  }
-});
-
-
 const TeamModel: Model<ITeamDocument> = (mongoose.models.Team as Model<ITeamDocument>) || mongoose.model<ITeamDocument>('Team', TeamSchema);
 
 export default TeamModel;

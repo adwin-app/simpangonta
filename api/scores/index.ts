@@ -1,6 +1,18 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import connectMongo from '../../lib/mongodb';
 import ScoreModel from '../../models/Score';
+import { Score } from '../../types';
+
+// Helper to convert DB document to a data transfer object (DTO) for the frontend
+const toScoreDTO = (score: any): Score => ({
+    id: score._id.toString(),
+    teamId: score.teamId,
+    competitionId: score.competitionId,
+    judgeId: score.judgeId,
+    scoresByCriterion: score.scoresByCriterion,
+    totalScore: score.totalScore,
+    notes: score.notes,
+});
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     await connectMongo();
@@ -15,8 +27,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const scores = await ScoreModel.find({
                     competitionId: competitionId as string,
                     judgeId: judgeId as string,
-                });
-                res.status(200).json(scores.map(s => s.toJSON()));
+                }).lean();
+                res.status(200).json(scores.map(toScoreDTO));
             } catch (error) {
                 res.status(500).json({ error: 'Error fetching scores' });
             }
@@ -35,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const score = await ScoreModel.findOneAndUpdate(filter, update, options);
 
                 if (score) {
-                    res.status(201).json(score.toJSON());
+                    res.status(201).json(toScoreDTO(score));
                 } else {
                     res.status(500).json({ error: 'Failed to save the score.' });
                 }
