@@ -33,7 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { password: _, ...schoolWithoutPassword } = schoolObject;
 
         res.status(201).json({
-             id: newSchool._id.toString(),
+             id: (newSchool as any)._id.toString(),
             ...schoolWithoutPassword
         });
 

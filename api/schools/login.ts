@@ -32,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { password: _, ...schoolWithoutPassword } = schoolObject;
 
         res.status(200).json({
-            id: school._id.toString(),
+            id: (school as any)._id.toString(),
             ...schoolWithoutPassword,
             role: UserRole.SEKOLAH, // Add role for the frontend auth context
         });

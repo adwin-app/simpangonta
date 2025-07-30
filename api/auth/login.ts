@@ -36,7 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { password: _, ...userWithoutPassword } = userObject;
 
         res.status(200).json({
-            id: user._id.toString(),
+            id: (user as any)._id.toString(),
             username: user.username,
             role: user.role,
             assignedCompetitionId: user.assignedCompetitionId,

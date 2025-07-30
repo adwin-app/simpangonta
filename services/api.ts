@@ -118,17 +118,19 @@ const addUser = async (userData: any): Promise<User> => {
 };
 
 const updateUser = async (id: string, updateData: any): Promise<User> => {
-    const response = await fetch(`/api/users/${id}`, {
+    const response = await fetch(`/api/users`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updateData),
+        body: JSON.stringify({ id, ...updateData }),
     });
     return handleResponse(response);
 };
 
 const deleteUser = async (id: string): Promise<{ message: string }> => {
-    const response = await fetch(`/api/users/${id}`, {
+    const response = await fetch(`/api/users`, {
         method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
     });
     return handleResponse(response);
 };
