@@ -12,7 +12,7 @@ const TeamSchema = new Schema<ITeamDocument>({
   members: { type: [String], required: true },
 });
 
-TeamSchema.virtual('id').get(function() {
+TeamSchema.virtual('id').get(function(this: ITeamDocument) {
   return this._id.toString();
 });
 

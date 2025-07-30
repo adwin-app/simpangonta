@@ -17,7 +17,7 @@ const ScoreSchema = new Schema<IScoreDocument>({
 ScoreSchema.index({ teamId: 1, competitionId: 1, judgeId: 1 }, { unique: true });
 
 
-ScoreSchema.virtual('id').get(function() {
+ScoreSchema.virtual('id').get(function(this: IScoreDocument) {
   return this._id.toString();
 });
 

@@ -13,7 +13,7 @@ const CompetitionSchema = new Schema<ICompetitionDocument>({
   criteria: { type: [CriterionSchema], required: true },
 });
 
-CompetitionSchema.virtual('id').get(function() {
+CompetitionSchema.virtual('id').get(function(this: ICompetitionDocument) {
   return this._id.toString();
 });
 
