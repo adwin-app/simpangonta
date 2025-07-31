@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import { AuthContext } from '../../App';
 import { apiService } from '../../services/api';
@@ -117,23 +118,33 @@ export const JudgePortalPage: React.FC = () => {
             }
 
             try {
-                const competitionId = auth.assignedCompetitionId;
+                const { assignedCompetitionId, identifier, assignedTeamType } = auth;
                 
                 const [allCompetitions, allTeams, judgeScores] = await Promise.all([
                     apiService.getCompetitions(),
                     apiService.getTeams(),
-                    apiService.getScores(competitionId, auth.identifier)
+                    apiService.getScores(assignedCompetitionId, identifier)
                 ]);
 
-                const foundCompetition = allCompetitions.find(c => c.id === competitionId);
+                const foundCompetition = allCompetitions.find(c => c.id === assignedCompetitionId);
                 
                 if (foundCompetition) {
                     setMyCompetition(foundCompetition);
-                    setPutraTeams(allTeams.filter(t => t.type === 'Putra'));
-                    setPutriTeams(allTeams.filter(t => t.type === 'Putri'));
                     
+                    // Filter teams based on judge's assignment
+                    const putra = allTeams.filter(t => t.type === 'Putra');
+                    const putri = allTeams.filter(t => t.type === 'Putri');
+                    setPutraTeams(assignedTeamType === 'Putri' ? [] : putra);
+                    setPutriTeams(assignedTeamType === 'Putra' ? [] : putri);
+
+                    const teamsToProcess = assignedTeamType === 'Putri' 
+                        ? putri 
+                        : assignedTeamType === 'Putra'
+                        ? putra
+                        : allTeams;
+
                     const initialScores: ScoreInputState = {};
-                    allTeams.forEach(team => {
+                    teamsToProcess.forEach(team => {
                         const existingScore = judgeScores.find(s => s.teamId === team.id);
                         const scoresByCriterion: { [criterionId: string]: string } = {};
                         if (existingScore) {
@@ -157,7 +168,7 @@ export const JudgePortalPage: React.FC = () => {
         };
 
         loadData();
-    }, [auth?.identifier, auth?.assignedCompetitionId]);
+    }, [auth?.identifier, auth?.assignedCompetitionId, auth?.assignedTeamType]);
 
     const handleInputChange = (teamId: string, criterionId: string, value: string) => {
         setScoreInputs(prev => ({
@@ -247,7 +258,8 @@ export const JudgePortalPage: React.FC = () => {
     const renderTeamTable = (teams: Team[], title: string) => {
         if (!myCompetition) return null;
         if (teams.length === 0) {
-            return <Card><h3 className="text-xl font-semibold mb-4">{title}</h3><p className="text-gray-500">Tidak ada regu {title.toLowerCase()} yang terdaftar.</p></Card>;
+            // Don't show the table at all if there are no teams for this category
+            return null;
         }
         return (
             <Card>
@@ -299,15 +311,27 @@ export const JudgePortalPage: React.FC = () => {
         return <Card><div className="text-center p-8"><h2 className="text-xl font-bold text-yellow-600">Belum Ada Tugas</h2><p className="text-gray-600 mt-2">Anda belum ditugaskan untuk menilai lomba apapun. Mohon hubungi panitia.</p></div></Card>;
     }
 
+    const noTeamsToShow = putraTeams.length === 0 && putriTeams.length === 0;
+
     return (
         <div className="space-y-6">
             <div className="text-center">
                 <h1 className="text-3xl font-bold">Portal Penilaian Juri</h1>
-                <h2 className="text-2xl font-semibold mt-1" style={{color: AppColors.primary}}>Lomba: {myCompetition.name}</h2>
+                <h2 className="text-2xl font-semibold mt-1" style={{color: AppColors.primary}}>
+                    Lomba: {myCompetition.name} 
+                    {auth.assignedTeamType ? ` (Hanya Regu ${auth.assignedTeamType})` : ''}
+                </h2>
             </div>
             
             {renderTeamTable(putraTeams, 'Regu Putra')}
             {renderTeamTable(putriTeams, 'Regu Putri')}
+            {noTeamsToShow && (
+                <Card>
+                    <p className="text-center text-gray-500 py-4">
+                        Tidak ada regu yang terdaftar dalam kategori yang ditugaskan kepada Anda.
+                    </p>
+                </Card>
+            )}
         </div>
     );
 };

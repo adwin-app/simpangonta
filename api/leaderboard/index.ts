@@ -48,8 +48,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             
             const teamScoresForCompetition = filteredTeams.map(team => {
                 const teamScores = scoresForCompetition.filter(s => s.teamId === team.id);
-                // In a real scenario, you might average scores from multiple judges. Here we take the highest/latest for simplicity.
-                const finalScore = teamScores.length > 0 ? Math.max(...teamScores.map(s => s.totalScore)) : 0;
+                // Calculate the average score from all judges for this team and competition.
+                const finalScore = teamScores.length > 0
+                    ? teamScores.reduce((acc, s) => acc + s.totalScore, 0) / teamScores.length
+                    : 0;
                 
                 if (teamStats[team.id]) {
                     teamStats[team.id].scoresByCompetition[competitionId] = finalScore;

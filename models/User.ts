@@ -7,6 +7,7 @@ export interface IUserDocument extends Document {
   password?: string; // Password is not always sent, e.g., in DTOs
   role: UserRole;
   assignedCompetitionId?: string;
+  assignedTeamType?: 'Putra' | 'Putri';
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -15,6 +16,7 @@ const UserSchema = new Schema<IUserDocument>({
   password: { type: String, required: true, select: true }, // select: true to fetch it for comparison
   role: { type: String, required: true, enum: Object.values(UserRole) },
   assignedCompetitionId: { type: String, default: null },
+  assignedTeamType: { type: String, enum: ['Putra', 'Putri'], default: null },
 }, {
   timestamps: true,
 });

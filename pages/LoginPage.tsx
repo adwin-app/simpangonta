@@ -23,7 +23,10 @@ export const LoginPage: React.FC = () => {
         try {
             const user = await apiService.judgeLogin({ username, password });
             if (user && user.role === UserRole.JURI) {
-                auth?.login(user.role, user.id, { assignedCompetitionId: user.assignedCompetitionId });
+                auth?.login(user.role, user.id, { 
+                    assignedCompetitionId: user.assignedCompetitionId,
+                    assignedTeamType: user.assignedTeamType 
+                });
                 navigate(AppRoutes.judgePortal);
             } else {
                 setError('Hanya juri yang dapat login di halaman ini.');

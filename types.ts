@@ -1,6 +1,7 @@
 
 
 
+
 export enum UserRole {
   ADMIN = 'ADMIN',
   JURI = 'JURI',
@@ -13,6 +14,7 @@ export interface User {
     role: UserRole;
     assignedCompetitionId?: string;
     assignedCompetitionName?: string;
+    assignedTeamType?: 'Putra' | 'Putri' | null;
 }
 
 export interface School {

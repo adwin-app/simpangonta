@@ -11,6 +11,7 @@ const toUserDTO = (user: any, competitionName?: string): User => ({
     role: user.role,
     assignedCompetitionId: user.assignedCompetitionId,
     assignedCompetitionName: competitionName || '',
+    assignedTeamType: user.assignedTeamType,
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -25,7 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const competitionMap = new Map(competitions.map(c => [c._id.toString(), c.name]));
 
                 const usersWithCompetitionNames = users.map(user => {
-                    const competitionName = user.assignedCompetitionId ? competitionMap.get(user.assignedCompetitionId) : undefined;
+                    const competitionName = user.assignedCompetitionId ? competitionMap.get(user.assignedCompetitionId as string) : undefined;
                     return toUserDTO(user, competitionName);
                 });
                 
@@ -63,12 +64,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         case 'PUT':
             try {
-                const { id, assignedCompetitionId } = req.body;
+                const { id, assignedCompetitionId, assignedTeamType } = req.body;
                 if (!id) return res.status(400).json({ error: 'User ID is required' });
+
+                const updateData = {
+                    assignedCompetitionId: assignedCompetitionId || null,
+                    assignedTeamType: assignedTeamType || null,
+                };
 
                 const updatedUser = await UserModel.findByIdAndUpdate(
                     id,
-                    { assignedCompetitionId: assignedCompetitionId || null },
+                    updateData,
                     { new: true }
                 );
 

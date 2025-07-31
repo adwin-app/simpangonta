@@ -2,21 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { apiService } from '../../services/api';
 import { User, Competition } from '../../types';
 import { Card, Button, Input, Select } from '../../components/UI';
-import { PlusCircleIcon, UserGroupIcon, TrashIcon, CloseIcon } from '../../constants';
+import { PlusCircleIcon, UserGroupIcon, TrashIcon } from '../../constants';
 
 export const ManageJudgesPage: React.FC = () => {
     const [judges, setJudges] = useState<User[]>([]);
     const [competitions, setCompetitions] = useState<Competition[]>([]);
     const [loading, setLoading] = useState(true);
     
-    // State for adding a new judge
     const [newUsername, setNewUsername] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [addError, setAddError] = useState('');
 
-    // State for updating assignments
-    const [assignment, setAssignment] = useState<{ [judgeId: string]: string }>({});
+    const [assignments, setAssignments] = useState<{ [judgeId: string]: { competitionId: string; teamType: string; } }>({});
     
     const fetchData = async () => {
         setLoading(true);
@@ -28,12 +26,14 @@ export const ManageJudgesPage: React.FC = () => {
             setJudges(judgesData);
             setCompetitions(competitionsData);
 
-            // Initialize assignment state
-            const initialAssignment: { [judgeId: string]: string } = {};
+            const initialAssignments: { [judgeId: string]: { competitionId: string; teamType: string; } } = {};
             judgesData.forEach(j => {
-                initialAssignment[j.id] = j.assignedCompetitionId || '';
+                initialAssignments[j.id] = {
+                    competitionId: j.assignedCompetitionId || '',
+                    teamType: j.assignedTeamType || ''
+                };
             });
-            setAssignment(initialAssignment);
+            setAssignments(initialAssignments);
 
         } catch (error) {
             console.error("Failed to fetch data:", error);
@@ -78,16 +78,30 @@ export const ManageJudgesPage: React.FC = () => {
         }
     };
     
-    const handleAssignmentChange = (judgeId: string, competitionId: string) => {
-        setAssignment(prev => ({ ...prev, [judgeId]: competitionId }));
+    const handleAssignmentChange = (judgeId: string, field: 'competitionId' | 'teamType', value: string) => {
+        setAssignments(prev => {
+            const currentAssignment = { ...(prev[judgeId] || { competitionId: '', teamType: '' }) };
+            currentAssignment[field] = value;
+            // if competition is removed, team type assignment is also removed
+            if (field === 'competitionId' && !value) {
+                currentAssignment.teamType = '';
+            }
+            return {
+                ...prev,
+                [judgeId]: currentAssignment
+            };
+        });
     };
 
     const handleSaveAssignment = async (judgeId: string) => {
-        const competitionId = assignment[judgeId];
+        const { competitionId, teamType } = assignments[judgeId];
         try {
-            await apiService.updateUser(judgeId, { assignedCompetitionId: competitionId });
+            await apiService.updateUser(judgeId, { 
+                assignedCompetitionId: competitionId,
+                assignedTeamType: teamType
+            });
             alert('Tugas juri berhasil disimpan.');
-            fetchData(); // Refresh to update competition name
+            fetchData(); // Refresh to update competition name and type
         } catch (error: any) {
              alert(`Gagal menyimpan tugas: ${error.message}`);
         }
@@ -132,7 +146,7 @@ export const ManageJudgesPage: React.FC = () => {
             </Card>
 
             <Card>
-                <h2 className="text-xl font-semibold mb-4">Daftar Juri</h2>
+                <h2 className="text-xl font-semibold mb-4">Daftar Juri dan Penugasan</h2>
                 {loading ? (
                     <p>Memuat daftar juri...</p>
                 ) : judges.length > 0 ? (
@@ -141,34 +155,53 @@ export const ManageJudgesPage: React.FC = () => {
                            <thead className="bg-gray-50">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tugas Lomba</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tugas</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                                 </tr>
                            </thead>
                            <tbody className="bg-white divide-y divide-gray-200">
                                 {judges.map((judge) => (
                                     <tr key={judge.id}>
-                                        <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{judge.username}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap align-top">
+                                            <p className="font-medium text-gray-900">{judge.username}</p>
+                                            {judge.assignedCompetitionName && (
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    Bertugas di: {judge.assignedCompetitionName} 
+                                                    {judge.assignedTeamType ? ` (${judge.assignedTeamType})` : ' (Semua)'}
+                                                </p>
+                                            )}
+                                        </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex flex-col md:flex-row md:items-center gap-2">
                                                 <Select
-                                                  value={assignment[judge.id] || ''}
-                                                  onChange={e => handleAssignmentChange(judge.id, e.target.value)}
-                                                  className="w-full max-w-xs"
+                                                  value={assignments[judge.id]?.competitionId || ''}
+                                                  onChange={e => handleAssignmentChange(judge.id, 'competitionId', e.target.value)}
+                                                  className="w-full"
                                                 >
-                                                    <option value="">-- Tidak ditugaskan --</option>
+                                                    <option value="">-- Pilih Lomba --</option>
                                                     {competitions.map(comp => (
                                                         <option key={comp.id} value={comp.id}>{comp.name}</option>
                                                     ))}
                                                 </Select>
-                                                <Button variant="primary" className="py-2 px-4 text-sm" onClick={() => handleSaveAssignment(judge.id)}>Simpan</Button>
+                                                <Select
+                                                  value={assignments[judge.id]?.teamType || ''}
+                                                  onChange={e => handleAssignmentChange(judge.id, 'teamType', e.target.value)}
+                                                  className="w-full"
+                                                  disabled={!assignments[judge.id]?.competitionId}
+                                                >
+                                                    <option value="">Semua (Putra & Putri)</option>
+                                                    <option value="Putra">Putra Saja</option>
+                                                    <option value="Putri">Putri Saja</option>
+                                                </Select>
                                             </div>
-                                             {judge.assignedCompetitionName && <p className="text-xs text-gray-500 mt-1">Saat ini bertugas di: {judge.assignedCompetitionName}</p>}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <button onClick={() => handleDeleteJudge(judge.id, judge.username)} className="p-2 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full">
-                                                <TrashIcon className="w-5 h-5" />
-                                            </button>
+                                        <td className="px-6 py-4 whitespace-nowrap align-top">
+                                            <div className="flex items-center gap-2">
+                                                <Button variant="primary" className="py-2 px-4 text-sm" onClick={() => handleSaveAssignment(judge.id)}>Simpan</Button>
+                                                <button onClick={() => handleDeleteJudge(judge.id, judge.username)} className="p-2 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full" title={`Hapus juri ${judge.username}`}>
+                                                    <TrashIcon className="w-5 h-5" />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
