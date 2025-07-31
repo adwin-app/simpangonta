@@ -1,5 +1,4 @@
 
-
 export enum UserRole {
   ADMIN = 'ADMIN',
   JURI = 'JURI',
@@ -74,19 +73,4 @@ export interface DashboardStats {
   teamsByType: { putra: number; putri: number };
   totalCompetitions: number;
   scoresByJudge: { judgeId: string; count: number }[];
-}
-
-export interface JudgeReportTeamEntry {
-    teamId: string;
-    teamName: string;
-    school: string;
-    scores: { [judgeId: string]: number | undefined };
-    averageScore: number;
-}
-
-export interface JudgeReportData {
-    competitionName: string;
-    judges: { id: string; username: string }[];
-    putra: JudgeReportTeamEntry[];
-    putri: JudgeReportTeamEntry[];
 }
