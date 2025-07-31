@@ -1,4 +1,5 @@
-import { Competition, Team, Score, LeaderboardEntry, UserRole, DashboardStats, Criterion, User, School } from '../types';
+
+import { Competition, Team, Score, LeaderboardEntry, UserRole, DashboardStats, Criterion, User, School, JudgeReportData } from '../types';
 
 const handleResponse = async (response: Response) => {
     if (!response.ok) {
@@ -180,6 +181,11 @@ const getSchools = async (): Promise<School[]> => {
     return handleResponse(response);
 };
 
+const getJudgeReport = async (competitionId: string): Promise<JudgeReportData> => {
+    const response = await fetch(`/api/admin/judge-report?competitionId=${competitionId}`);
+    return handleResponse(response);
+};
+
 
 export const apiService = {
     getCompetitions,
@@ -203,4 +209,5 @@ export const apiService = {
     schoolRegister,
     schoolLogin,
     getSchools,
+    getJudgeReport,
 };

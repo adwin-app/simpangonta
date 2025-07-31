@@ -1,11 +1,12 @@
 
 
 
+
 import React, { useState, useContext } from 'react';
 import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../App';
 import { UserRole } from '../types';
-import { AppColors, AppRoutes, ScoutBadgeIcon, MenuIcon, CloseIcon, BuildingOfficeIcon } from '../constants';
+import { AppColors, AppRoutes, ScoutBadgeIcon, MenuIcon, CloseIcon, BuildingOfficeIcon, DocumentReportIcon } from '../constants';
 
 const Header: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -31,6 +32,7 @@ const Header: React.FC = () => {
             <NavLink to={AppRoutes.adminManageCompetitions} className={getLinkClass}>Kelola Lomba</NavLink>
             <NavLink to={AppRoutes.adminManageJudges} className={getLinkClass}>Kelola Juri</NavLink>
             <NavLink to={AppRoutes.adminManageSchools} className={getLinkClass}>Kelola Sekolah</NavLink>
+            <NavLink to={AppRoutes.adminJudgeReport} className={getLinkClass}>Laporan Juri</NavLink>
             <NavLink to={AppRoutes.adminRecap} className={getLinkClass}>Rekap Juara</NavLink>
         </>
     );

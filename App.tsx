@@ -1,3 +1,4 @@
+
 import React, { useState, createContext, useCallback, useMemo } from 'react';
 import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { UserRole } from './types';
@@ -18,6 +19,7 @@ import { PublicLeaderboardPage } from './pages/public/PublicLeaderboardPage';
 import { SchoolRegisterPage } from './pages/school/SchoolRegisterPage';
 import { SchoolLoginPage } from './pages/school/SchoolLoginPage';
 import { SchoolDashboardPage } from './pages/school/SchoolDashboardPage';
+import { JudgeReportPage } from './pages/admin/JudgeReportPage';
 
 
 interface AuthContextType {
@@ -113,6 +115,7 @@ const App: React.FC = () => {
                             <Route path={AppRoutes.adminManageSchools} element={<ManageSchoolsPage />} />
                             <Route path={AppRoutes.adminRegisterTeam} element={<RegisterTeamPage />} />
                             <Route path={AppRoutes.adminRecap} element={<AdminRecapPage />} />
+                            <Route path={AppRoutes.adminJudgeReport} element={<JudgeReportPage />} />
                             <Route path={AppRoutes.adminTeamList} element={<TeamListPage />} />
                         </Route>
 

@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 export const AppColors = {
@@ -22,6 +23,7 @@ export const AppRoutes = {
   adminManageSchools: '/admin/schools',
   adminRegisterTeam: '/admin/register',
   adminRecap: '/admin/recap',
+  adminJudgeReport: '/admin/judge-report',
   adminTeamList: '/admin/teams',
   judgePortal: '/judge/portal',
   schoolRegister: '/school/register',
@@ -118,5 +120,11 @@ export const TrashIcon = (props: React.ComponentProps<'svg'>) => (
 export const BuildingOfficeIcon = (props: React.ComponentProps<'svg'>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6h1.5m-1.5 3h1.5m-1.5 3h1.5M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+    </svg>
+);
+
+export const DocumentReportIcon = (props: React.ComponentProps<'svg'>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-1.621-.87a3 3 0 01-.879-2.122v-1.007m-5.131 0A3.375 3.375 0 006.375 21h11.25c1.657 0 3-1.343 3-3v-3.031A3.375 3.375 0 0018.869 12H5.13m13.739 0a3.375 3.375 0 00-3.13-2.531m-10.608 0A3.375 3.375 0 005.13 12h13.739m-16.5 0a4.5 4.5 0 01-1.88-8.614A4.5 4.5 0 016.375 3h11.25a4.5 4.5 0 011.88 8.614m-16.5 0a3.375 3.375 0 00-3.13 2.531" />
     </svg>
 );
