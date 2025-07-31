@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import { AuthContext } from '../../App';
 import { apiService } from '../../services/api';
@@ -57,7 +55,7 @@ const TeamScoreRow: React.FC<{
                 <td key={crit.id} className="px-4 py-4">
                     {isEditing ? (
                         <Input
-                            type="number" min="0" max="100"
+                            type="number" min="0" max={crit.maxScore}
                             value={scoreInput.scores[crit.id] || ''}
                             onChange={e => onInputChange(team.id, crit.id, e.target.value)}
                             className="w-24"
@@ -215,18 +213,22 @@ export const JudgePortalPage: React.FC = () => {
         const currentInput = scoreInputs[teamId];
         const scoresByCriterionNum: { [criterionId: string]: number } = {};
         let allScoresValid = true;
+        let validationError = '';
 
         myCompetition.criteria.forEach(crit => {
             const scoreStr = currentInput.scores[crit.id] || '0';
             const scoreNum = Number(scoreStr);
-            if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > 100) {
+            if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > crit.maxScore) {
                 allScoresValid = false;
+                 if (!validationError) {
+                    validationError = `Nilai "${crit.name}" harus antara 0 - ${crit.maxScore}.`;
+                }
             }
             scoresByCriterionNum[crit.id] = isNaN(scoreNum) ? 0 : scoreNum;
         });
 
         if (!allScoresValid) {
-            setRowMessage({ teamId, text: 'Skor harus antara 0-100', isError: true });
+            setRowMessage({ teamId, text: validationError || 'Skor tidak valid.', isError: true });
             setIsRowSaving(null);
             return;
         }
@@ -270,7 +272,10 @@ export const JudgePortalPage: React.FC = () => {
                             <tr>
                                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Regu</th>
                                 {myCompetition.criteria.map(crit => (
-                                    <th key={crit.id} scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">{crit.name}</th>
+                                    <th key={crit.id} scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
+                                        {crit.name}
+                                        <span className="block font-normal text-gray-400">(Max: {crit.maxScore})</span>
+                                    </th>
                                 ))}
                                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Total</th>
                                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Catatan</th>

@@ -9,7 +9,7 @@ import { Competition, Criterion } from '../../types';
 const toCompetitionDTO = (comp: any): Competition => ({
     id: comp._id.toString(),
     name: comp.name,
-    criteria: comp.criteria.map((c: any) => ({ id: c.id, name: c.name })),
+    criteria: comp.criteria.map((c: any) => ({ id: c.id, name: c.name, maxScore: c.maxScore })),
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -19,7 +19,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case 'GET':
             try {
                 const competitions = await CompetitionModel.find({}).lean();
-                res.status(200).json(competitions.map(toCompetitionDTO));
+                // Handle legacy data that might not have maxScore
+                const competitionsWithDefaults = competitions.map(comp => ({
+                    ...comp,
+                    criteria: comp.criteria.map(crit => ({ ...crit, maxScore: crit.maxScore || 100 }))
+                }))
+                res.status(200).json(competitionsWithDefaults.map(toCompetitionDTO));
             } catch (error) {
                 res.status(500).json({ error: 'Error fetching competitions' });
             }
@@ -30,7 +35,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 if (!name || !criteria || !Array.isArray(criteria) || criteria.length === 0) {
                     return res.status(400).json({ error: 'Name and criteria are required.' });
                 }
-                const criteriaWithIds = criteria.map((c: { name: string}) => ({...c, id: uuidv4()}));
+                const criteriaWithIds = criteria.map((c: { name: string, maxScore: number}) => ({
+                    ...c, 
+                    id: uuidv4(),
+                    maxScore: c.maxScore || 100
+                }));
 
                 const newCompetition = new CompetitionModel({ name, criteria: criteriaWithIds });
                 await newCompetition.save();
@@ -52,6 +61,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const criteriaWithIds = criteria.map((c: Criterion) => ({
                     id: c.id.startsWith('new-') ? uuidv4() : c.id,
                     name: c.name,
+                    maxScore: c.maxScore || 100,
                 }));
 
                 const updatedCompetition = await CompetitionModel.findByIdAndUpdate(

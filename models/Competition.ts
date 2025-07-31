@@ -4,6 +4,7 @@ import { Criterion } from '../types';
 const CriterionSchema = new Schema<Criterion>({
   id: { type: String, required: true },
   name: { type: String, required: true },
+  maxScore: { type: Number, required: true, default: 100 },
 }, { _id: false });
 
 // This interface defines the data properties of a competition.

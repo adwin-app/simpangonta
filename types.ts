@@ -1,7 +1,4 @@
 
-
-
-
 export enum UserRole {
   ADMIN = 'ADMIN',
   JURI = 'JURI',
@@ -26,6 +23,7 @@ export interface School {
 export interface Criterion {
   id: string;
   name: string;
+  maxScore: number;
 }
 
 export interface Competition {

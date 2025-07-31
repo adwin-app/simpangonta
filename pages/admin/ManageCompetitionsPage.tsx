@@ -13,14 +13,21 @@ const EditCompetitionModal: React.FC<{
     const [criteria, setCriteria] = useState<Criterion[]>(competition.criteria);
     const [isSaving, setIsSaving] = useState(false);
 
-    const handleCriterionChange = (index: number, value: string) => {
+    const handleCriterionChange = (index: number, field: 'name' | 'maxScore', value: string) => {
         const newCriteria = [...criteria];
-        newCriteria[index] = { ...newCriteria[index], name: value };
+        const updatedCriterion = { ...newCriteria[index] };
+        if (field === 'name') {
+            updatedCriterion.name = value;
+        } else {
+            const numValue = parseInt(value, 10);
+            updatedCriterion.maxScore = isNaN(numValue) || numValue <= 0 ? 1 : numValue;
+        }
+        newCriteria[index] = updatedCriterion;
         setCriteria(newCriteria);
     };
 
     const addCriterion = () => {
-        setCriteria([...criteria, { id: `new-${Date.now()}`, name: '' }]);
+        setCriteria([...criteria, { id: `new-${Date.now()}`, name: '', maxScore: 100 }]);
     };
 
     const removeCriterion = (id: string) => {
@@ -29,7 +36,7 @@ const EditCompetitionModal: React.FC<{
 
     const handleSave = async () => {
         const finalCriteria = criteria
-            .map(c => ({ ...c, name: c.name.trim() }))
+            .map(c => ({ ...c, name: c.name.trim(), maxScore: c.maxScore || 100 }))
             .filter(c => c.name.trim() !== '');
 
         if (!name.trim() || finalCriteria.length === 0) {
@@ -76,9 +83,18 @@ const EditCompetitionModal: React.FC<{
                                 <div key={criterion.id} className="flex items-center gap-2">
                                     <Input
                                         value={criterion.name}
-                                        onChange={e => handleCriterionChange(index, e.target.value)}
+                                        onChange={e => handleCriterionChange(index, 'name', e.target.value)}
                                         placeholder={`Kriteria ${index + 1}`}
                                         className="flex-grow"
+                                        required
+                                    />
+                                    <Input
+                                        type="number"
+                                        value={criterion.maxScore}
+                                        onChange={e => handleCriterionChange(index, 'maxScore', e.target.value)}
+                                        className="w-28"
+                                        placeholder="Max"
+                                        min="1"
                                         required
                                     />
                                     <button onClick={() => removeCriterion(criterion.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-full">
@@ -104,7 +120,7 @@ export const ManageCompetitionsPage: React.FC = () => {
     const [competitions, setCompetitions] = useState<Competition[]>([]);
     const [loading, setLoading] = useState(true);
     const [newCompetitionName, setNewCompetitionName] = useState('');
-    const [newCriteria, setNewCriteria] = useState<{name: string}[]>([{ name: '' }]);
+    const [newCriteria, setNewCriteria] = useState<{name: string, maxScore: string}[]>([{ name: '', maxScore: '100' }]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingCompetition, setEditingCompetition] = useState<Competition | null>(null);
 
@@ -124,23 +140,29 @@ export const ManageCompetitionsPage: React.FC = () => {
         fetchCompetitions();
     }, []);
 
-    const addCriterionInput = () => setNewCriteria([...newCriteria, { name: '' }]);
+    const addCriterionInput = () => setNewCriteria([...newCriteria, { name: '', maxScore: '100' }]);
     const removeCriterionInput = (index: number) => setNewCriteria(newCriteria.filter((_, i) => i !== index));
-    const handleCriterionInputChange = (index: number, value: string) => {
+    const handleCriterionInputChange = (index: number, field: 'name' | 'maxScore', value: string) => {
         const updatedCriteria = [...newCriteria];
-        updatedCriteria[index].name = value;
+        updatedCriteria[index] = { ...updatedCriteria[index], [field]: value };
         setNewCriteria(updatedCriteria);
     };
 
     const handleAddCompetition = async (e: React.FormEvent) => {
         e.preventDefault();
-        const finalCriteria = newCriteria.map(c => ({ name: c.name.trim() })).filter(c => c.name);
+        const finalCriteria = newCriteria
+          .map(c => ({ 
+              name: c.name.trim(), 
+              maxScore: parseInt(c.maxScore, 10) || 100 
+          }))
+          .filter(c => c.name);
+
         if (newCompetitionName.trim() && finalCriteria.length > 0) {
             setIsSubmitting(true);
             try {
                 await apiService.addCompetition(newCompetitionName.trim(), finalCriteria);
                 setNewCompetitionName('');
-                setNewCriteria([{ name: '' }]);
+                setNewCriteria([{ name: '', maxScore: '100' }]);
                 fetchCompetitions();
             } catch (error: any) {
                 console.error("Failed to add competition:", error);
@@ -192,8 +214,18 @@ export const ManageCompetitionsPage: React.FC = () => {
                                     type="text"
                                     placeholder={`Nama Kriteria ${index + 1}`}
                                     value={criterion.name}
-                                    onChange={(e) => handleCriterionInputChange(index, e.target.value)}
+                                    onChange={(e) => handleCriterionInputChange(index, 'name', e.target.value)}
                                     className="flex-grow"
+                                    required
+                                />
+                                <Input
+                                    type="number"
+                                    placeholder="Skor Max"
+                                    title="Skor Maksimal"
+                                    value={criterion.maxScore}
+                                    onChange={(e) => handleCriterionInputChange(index, 'maxScore', e.target.value)}
+                                    className="w-28"
+                                    min="1"
                                     required
                                 />
                                 <button type="button" onClick={() => removeCriterionInput(index)} className="p-2 text-red-500 hover:bg-red-100 rounded-full">
@@ -230,7 +262,7 @@ export const ManageCompetitionsPage: React.FC = () => {
                                         <div className="mt-2 ml-9">
                                             <h4 className="text-sm font-semibold text-gray-600">Kriteria:</h4>
                                             <ul className="list-disc list-inside text-sm text-gray-700">
-                                                {comp.criteria.map(c => <li key={c.id}>{c.name}</li>)}
+                                                {comp.criteria.map(c => <li key={c.id}>{c.name} (Skor Max: {c.maxScore})</li>)}
                                             </ul>
                                         </div>
                                     </div>
