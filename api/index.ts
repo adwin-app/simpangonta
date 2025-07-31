@@ -53,6 +53,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return usersHandler(req, res);
     }
 
-    // Fallback untuk rute yang tidak ditemukan
+    // Fallback for any routes not found
     return res.status(404).json({ error: 'Endpoint not found' });
 }
