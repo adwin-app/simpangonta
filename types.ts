@@ -31,7 +31,6 @@ export interface Competition {
   id:string;
   name: string;
   criteria: Criterion[];
-  participantsPerTeam: number; // 0 or null could mean all members
 }
 
 export interface Team {
@@ -54,7 +53,6 @@ export interface Score {
   scoresByCriterion: { [criterionId: string]: number };
   totalScore: number;
   notes?: string;
-  participants: string[];
 }
 
 export interface LeaderboardEntry {

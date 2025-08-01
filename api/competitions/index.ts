@@ -12,7 +12,6 @@ const toCompetitionDTO = (comp: any): Competition => ({
     id: comp._id.toString(),
     name: comp.name,
     criteria: comp.criteria.map((c: any) => ({ id: c.id, name: c.name, maxScore: c.maxScore })),
-    participantsPerTeam: comp.participantsPerTeam || 0,
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -25,8 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 // Handle legacy data that might not have maxScore
                 const competitionsWithDefaults = competitions.map(comp => ({
                     ...comp,
-                    criteria: comp.criteria.map(crit => ({ ...crit, maxScore: crit.maxScore || 100 })),
-                    participantsPerTeam: comp.participantsPerTeam === undefined ? (comp.name.toLowerCase() === TAPAK_KEMAH_NAME.toLowerCase() ? 0 : 1) : comp.participantsPerTeam,
+                    criteria: comp.criteria.map(crit => ({ ...crit, maxScore: crit.maxScore || 100 }))
                 }))
                 res.status(200).json(competitionsWithDefaults.map(toCompetitionDTO));
             } catch (error) {
@@ -35,7 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             break;
         case 'POST':
             try {
-                const { name, criteria, participantsPerTeam } = req.body;
+                const { name, criteria } = req.body;
                 if (!name || !criteria || !Array.isArray(criteria) || criteria.length === 0) {
                     return res.status(400).json({ error: 'Name and criteria are required.' });
                 }
@@ -45,7 +43,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     maxScore: c.maxScore || 100
                 }));
 
-                const newCompetition = new CompetitionModel({ name, criteria: criteriaWithIds, participantsPerTeam });
+                const newCompetition = new CompetitionModel({ name, criteria: criteriaWithIds });
                 await newCompetition.save();
                 res.status(201).json(toCompetitionDTO(newCompetition));
             } catch (error: any) {
@@ -57,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             break;
         case 'PUT':
             try {
-                const { id, name, criteria, participantsPerTeam } = req.body;
+                const { id, name, criteria } = req.body;
                 if (!id || !name || !criteria || !Array.isArray(criteria)) {
                     return res.status(400).json({ error: 'ID, name and criteria are required.' });
                 }
@@ -72,16 +70,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     name: c.name,
                     maxScore: c.maxScore || 100,
                 }));
-                
-                const updatePayload = {
-                    name, 
-                    criteria: criteriaWithIds,
-                    participantsPerTeam: (name.toLowerCase() === TAPAK_KEMAH_NAME.toLowerCase()) ? 0 : participantsPerTeam,
-                };
 
                 const updatedCompetition = await CompetitionModel.findByIdAndUpdate(
                     id,
-                    updatePayload,
+                    { name, criteria: criteriaWithIds },
                     { new: true, runValidators: true }
                 );
 

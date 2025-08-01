@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { apiService } from '../../services/api';
 import { Competition, Criterion } from '../../types';
 import { Card, Button, Input } from '../../components/UI';
-import { PlusCircleIcon, TrophyIcon, CloseIcon, PencilIcon, TrashIcon, UserGroupIcon } from '../../constants';
+import { PlusCircleIcon, TrophyIcon, CloseIcon, PencilIcon, TrashIcon } from '../../constants';
 
 const TAPAK_KEMAH_NAME = 'Tapak Kemah';
 
@@ -13,7 +13,6 @@ const EditCompetitionModal: React.FC<{
 }> = ({ competition, onClose, onSave }) => {
     const [name, setName] = useState(competition.name);
     const [criteria, setCriteria] = useState<Criterion[]>(competition.criteria);
-    const [participantsPerTeam, setParticipantsPerTeam] = useState(competition.participantsPerTeam);
     const [isSaving, setIsSaving] = useState(false);
     const isTapakKemah = competition.name.toLowerCase() === TAPAK_KEMAH_NAME.toLowerCase();
 
@@ -56,11 +55,7 @@ const EditCompetitionModal: React.FC<{
 
         setIsSaving(true);
         try {
-            await apiService.updateCompetition(competition.id, { 
-                name: name.trim(), 
-                criteria: finalCriteria,
-                participantsPerTeam: isTapakKemah ? 0 : participantsPerTeam
-            });
+            await apiService.updateCompetition(competition.id, { name: name.trim(), criteria: finalCriteria });
             onSave();
         } catch (error: any) {
             console.error("Failed to update competition", error);
@@ -80,25 +75,10 @@ const EditCompetitionModal: React.FC<{
                     </button>
                 </div>
                 <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lomba</label>
-                            <Input value={name} onChange={e => setName(e.target.value)} required disabled={isTapakKemah} />
-                            {isTapakKemah && <p className="text-xs text-gray-500 mt-1">Nama lomba "Tapak Kemah" tidak dapat diubah.</p>}
-                        </div>
-                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah Peserta per Regu</label>
-                            <Input 
-                                type="number" 
-                                value={isTapakKemah ? '' : participantsPerTeam} 
-                                onChange={e => setParticipantsPerTeam(parseInt(e.target.value, 10) || 1)} 
-                                required 
-                                min="1"
-                                disabled={isTapakKemah}
-                                placeholder={isTapakKemah ? 'Semua Anggota' : 'Cth: 1'}
-                             />
-                              {isTapakKemah && <p className="text-xs text-gray-500 mt-1">Lomba ini diikuti oleh semua anggota regu.</p>}
-                        </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lomba</label>
+                        <Input value={name} onChange={e => setName(e.target.value)} required disabled={isTapakKemah} />
+                        {isTapakKemah && <p className="text-xs text-gray-500 mt-1">Nama lomba "Tapak Kemah" tidak dapat diubah karena memiliki logika penilaian khusus.</p>}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Kriteria Penilaian</label>
@@ -144,7 +124,6 @@ export const ManageCompetitionsPage: React.FC = () => {
     const [competitions, setCompetitions] = useState<Competition[]>([]);
     const [loading, setLoading] = useState(true);
     const [newCompetitionName, setNewCompetitionName] = useState('');
-    const [newParticipantsPerTeam, setNewParticipantsPerTeam] = useState<number>(1);
     const [newCriteria, setNewCriteria] = useState<{name: string, maxScore: string}[]>([{ name: '', maxScore: '100' }]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingCompetition, setEditingCompetition] = useState<Competition | null>(null);
@@ -185,9 +164,8 @@ export const ManageCompetitionsPage: React.FC = () => {
         if (newCompetitionName.trim() && finalCriteria.length > 0) {
             setIsSubmitting(true);
             try {
-                await apiService.addCompetition(newCompetitionName.trim(), finalCriteria, newParticipantsPerTeam);
+                await apiService.addCompetition(newCompetitionName.trim(), finalCriteria);
                 setNewCompetitionName('');
-                setNewParticipantsPerTeam(1);
                 setNewCriteria([{ name: '', maxScore: '100' }]);
                 fetchCompetitions();
             } catch (error: any) {
@@ -220,30 +198,16 @@ export const ManageCompetitionsPage: React.FC = () => {
             <Card>
                 <h2 className="text-xl font-semibold mb-4">Tambah Lomba Baru</h2>
                 <form onSubmit={handleAddCompetition} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                         <div className="md:col-span-2">
-                             <label htmlFor="competitionName" className="block text-sm font-medium text-gray-700 mb-1">Nama Lomba</label>
-                             <Input
-                                id="competitionName"
-                                type="text"
-                                value={newCompetitionName}
-                                onChange={(e) => setNewCompetitionName(e.target.value)}
-                                placeholder="e.g., Cerdas Cermat"
-                                required
-                            />
-                        </div>
-                        <div>
-                             <label htmlFor="participantsPerTeam" className="block text-sm font-medium text-gray-700 mb-1">Peserta / Regu</label>
-                             <Input
-                                id="participantsPerTeam"
-                                type="number"
-                                value={newParticipantsPerTeam}
-                                onChange={(e) => setNewParticipantsPerTeam(parseInt(e.target.value, 10) || 1)}
-                                placeholder="Jumlah peserta"
-                                required
-                                min="1"
-                            />
-                        </div>
+                    <div>
+                         <label htmlFor="competitionName" className="block text-sm font-medium text-gray-700 mb-1">Nama Lomba</label>
+                         <Input
+                            id="competitionName"
+                            type="text"
+                            value={newCompetitionName}
+                            onChange={(e) => setNewCompetitionName(e.target.value)}
+                            placeholder="e.g., Cerdas Cermat"
+                            required
+                        />
                     </div>
                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Kriteria Penilaian</label>
@@ -300,12 +264,6 @@ export const ManageCompetitionsPage: React.FC = () => {
                                             <div className="flex items-center">
                                                 <TrophyIcon className="w-6 h-6 mr-3 text-yellow-500" />
                                                 <span className="text-gray-800 font-bold text-lg">{comp.name}</span>
-                                            </div>
-                                            <div className="flex items-center text-sm text-gray-600 mt-2 ml-9 gap-1">
-                                                <UserGroupIcon className="w-4 h-4"/>
-                                                <span>
-                                                    {isTapakKemah || comp.participantsPerTeam === 0 ? 'Semua Anggota' : `${comp.participantsPerTeam} Peserta / Regu`}
-                                                </span>
                                             </div>
                                             <div className="mt-2 ml-9">
                                                 <h4 className="text-sm font-semibold text-gray-600">Kriteria:</h4>
