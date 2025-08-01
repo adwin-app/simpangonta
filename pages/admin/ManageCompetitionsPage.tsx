@@ -4,6 +4,8 @@ import { Competition, Criterion } from '../../types';
 import { Card, Button, Input } from '../../components/UI';
 import { PlusCircleIcon, TrophyIcon, CloseIcon, PencilIcon, TrashIcon } from '../../constants';
 
+const TAPAK_KEMAH_NAME = 'Tapak Kemah';
+
 const EditCompetitionModal: React.FC<{
     competition: Competition;
     onClose: () => void;
@@ -12,6 +14,7 @@ const EditCompetitionModal: React.FC<{
     const [name, setName] = useState(competition.name);
     const [criteria, setCriteria] = useState<Criterion[]>(competition.criteria);
     const [isSaving, setIsSaving] = useState(false);
+    const isTapakKemah = competition.name.toLowerCase() === TAPAK_KEMAH_NAME.toLowerCase();
 
     const handleCriterionChange = (index: number, field: 'name' | 'maxScore', value: string) => {
         const newCriteria = [...criteria];
@@ -74,7 +77,8 @@ const EditCompetitionModal: React.FC<{
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lomba</label>
-                        <Input value={name} onChange={e => setName(e.target.value)} required />
+                        <Input value={name} onChange={e => setName(e.target.value)} required disabled={isTapakKemah} />
+                        {isTapakKemah && <p className="text-xs text-gray-500 mt-1">Nama lomba "Tapak Kemah" tidak dapat diubah karena memiliki logika penilaian khusus.</p>}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Kriteria Penilaian</label>
@@ -251,32 +255,37 @@ export const ManageCompetitionsPage: React.FC = () => {
                     <p>Memuat daftar lomba...</p>
                 ) : competitions.length > 0 ? (
                     <ul className="space-y-4">
-                        {competitions.map((comp) => (
-                            <li key={comp.id} className="p-4 bg-gray-50 rounded-lg">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <div className="flex items-center">
-                                            <TrophyIcon className="w-6 h-6 mr-3 text-yellow-500" />
-                                            <span className="text-gray-800 font-bold text-lg">{comp.name}</span>
+                        {competitions.map((comp) => {
+                            const isTapakKemah = comp.name.toLowerCase() === TAPAK_KEMAH_NAME.toLowerCase();
+                            return (
+                                <li key={comp.id} className="p-4 bg-gray-50 rounded-lg">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <div className="flex items-center">
+                                                <TrophyIcon className="w-6 h-6 mr-3 text-yellow-500" />
+                                                <span className="text-gray-800 font-bold text-lg">{comp.name}</span>
+                                            </div>
+                                            <div className="mt-2 ml-9">
+                                                <h4 className="text-sm font-semibold text-gray-600">Kriteria:</h4>
+                                                <ul className="list-disc list-inside text-sm text-gray-700">
+                                                    {comp.criteria.map(c => <li key={c.id}>{c.name} (Skor Max: {c.maxScore})</li>)}
+                                                </ul>
+                                            </div>
                                         </div>
-                                        <div className="mt-2 ml-9">
-                                            <h4 className="text-sm font-semibold text-gray-600">Kriteria:</h4>
-                                            <ul className="list-disc list-inside text-sm text-gray-700">
-                                                {comp.criteria.map(c => <li key={c.id}>{c.name} (Skor Max: {c.maxScore})</li>)}
-                                            </ul>
+                                        <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                                             <Button variant="secondary" className="py-1 px-3 text-sm flex items-center" onClick={() => setEditingCompetition(comp)}>
+                                                 <PencilIcon className="w-4 h-4 mr-1"/> Edit
+                                             </Button>
+                                             {!isTapakKemah && (
+                                                 <Button variant="secondary" className="!bg-red-500 hover:!bg-red-600 text-white py-1 px-3 text-sm flex items-center" onClick={() => handleDelete(comp.id, comp.name)}>
+                                                    <TrashIcon className="w-4 h-4 mr-1"/> Hapus
+                                                 </Button>
+                                             )}
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                                         <Button variant="secondary" className="py-1 px-3 text-sm flex items-center" onClick={() => setEditingCompetition(comp)}>
-                                             <PencilIcon className="w-4 h-4 mr-1"/> Edit
-                                         </Button>
-                                         <Button variant="secondary" className="!bg-red-500 hover:!bg-red-600 text-white py-1 px-3 text-sm flex items-center" onClick={() => handleDelete(comp.id, comp.name)}>
-                                            <TrashIcon className="w-4 h-4 mr-1"/> Hapus
-                                         </Button>
-                                    </div>
-                                </div>
-                            </li>
-                        ))}
+                                </li>
+                            );
+                        })}
                     </ul>
                 ) : (
                     <p className="text-gray-500">Belum ada lomba yang ditambahkan.</p>

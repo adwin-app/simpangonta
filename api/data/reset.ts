@@ -8,8 +8,16 @@ import SchoolModel from '../../models/School';
 import { v4 as uuidv4 } from 'uuid';
 import { UserRole } from '../../types';
 
-const initialCompetitions = [
-  { name: 'Tapak Kemah', criteria: [{id: uuidv4(), name: 'Kerapian'}, {id: uuidv4(), name: 'Kekuatan'}, {id: uuidv4(), name: 'Fungsi'}] },
+const tapakKemahCompetition = { 
+  name: 'Tapak Kemah', 
+  criteria: [
+    {id: uuidv4(), name: 'Kerapian Tenda', maxScore: 100}, 
+    {id: uuidv4(), name: 'Kekuatan Ikatan', maxScore: 100}, 
+    {id: uuidv4(), name: 'Fungsi Bangunan', maxScore: 100}
+  ] 
+};
+
+const otherInitialCompetitions = [
   { name: 'Gelas Racing', criteria: [{id: uuidv4(), name: 'Kecepatan'}, {id: uuidv4(), name: 'Keseimbangan'}] },
   { name: 'KIM', criteria: [{id: uuidv4(), name: 'Ketepatan'}] },
   { name: 'Cerdas Cermat', criteria: [{id: uuidv4(), name: 'Skor'}] },
@@ -45,11 +53,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await SchoolModel.deleteMany({});
     
     if (mode === 'clean') {
-        return res.status(200).json({ message: 'Seluruh data aplikasi telah berhasil dibersihkan.' });
+        // Only create the core competition
+        await CompetitionModel.create(tapakKemahCompetition);
+        return res.status(200).json({ message: 'Seluruh data aplikasi telah berhasil dibersihkan dan lomba inti "Tapak Kemah" telah dibuat ulang.' });
     }
     
-    // Default behavior: seed new data
-    await CompetitionModel.insertMany(initialCompetitions);
+    // Default behavior: seed all new data
+    await CompetitionModel.insertMany([tapakKemahCompetition, ...otherInitialCompetitions]);
     await TeamModel.insertMany(initialTeams);
     
     // Manually create users to trigger password hashing

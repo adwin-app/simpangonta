@@ -5,6 +5,8 @@ import ScoreModel from '../../models/Score';
 import { v4 as uuidv4 } from 'uuid';
 import { Competition, Criterion } from '../../types';
 
+const TAPAK_KEMAH_NAME = 'Tapak Kemah';
+
 // Helper to convert DB document to a data transfer object (DTO) for the frontend
 const toCompetitionDTO = (comp: any): Competition => ({
     id: comp._id.toString(),
@@ -58,6 +60,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     return res.status(400).json({ error: 'ID, name and criteria are required.' });
                 }
 
+                const existingCompetition = await CompetitionModel.findById(id).lean();
+                if (existingCompetition && existingCompetition.name.toLowerCase() === TAPAK_KEMAH_NAME.toLowerCase() && name.toLowerCase() !== TAPAK_KEMAH_NAME.toLowerCase()) {
+                    return res.status(403).json({ error: 'Nama lomba "Tapak Kemah" tidak dapat diubah karena merupakan lomba inti.' });
+                }
+
                 const criteriaWithIds = criteria.map((c: Criterion) => ({
                     id: c.id.startsWith('new-') ? uuidv4() : c.id,
                     name: c.name,
@@ -86,6 +93,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const { id } = req.body;
                  if (!id) {
                     return res.status(400).json({ error: 'Competition ID is required' });
+                }
+
+                const competitionToDelete = await CompetitionModel.findById(id).lean();
+                if (competitionToDelete && competitionToDelete.name.toLowerCase() === TAPAK_KEMAH_NAME.toLowerCase()) {
+                    return res.status(403).json({ error: 'Lomba "Tapak Kemah" tidak dapat dihapus karena merupakan lomba inti sistem.' });
                 }
 
                 const deletedCompetition = await CompetitionModel.findByIdAndDelete(id);
