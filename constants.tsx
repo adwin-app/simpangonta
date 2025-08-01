@@ -1,9 +1,9 @@
 import React from 'react';
 
 export const AppColors = {
-  primary: '#2E7D32', // Scout Green
+  primary: '#5D4037', // Pramuka Brown
   accent: '#FFB300', // Yellow Button
-  background: '#F5F5F5',
+  background: '#EFEBE9', // Light Brown/Tan
   text: '#1F2937',
   card: '#FFFFFF',
   gold: '#FFD700',
@@ -29,9 +29,9 @@ export const AppRoutes = {
   schoolDashboard: '/school/dashboard',
 };
 
-export const ScoutBadgeIcon = (props: React.ComponentProps<'svg'>) => (
+export const TunasKelapaIcon = (props: React.ComponentProps<'svg'>) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 2L4.5 5V12C4.5 16.97 7.81 21.5 12 22.5C16.19 21.5 19.5 16.97 19.5 12V5L12 2ZM12 11.1L14.59 12.85L13.88 9.92L16.15 7.99L13.24 7.7L12 5L10.76 7.7L7.85 7.99L10.12 9.92L9.41 12.85L12 11.1Z" />
+    <path d="M12,2A7,7,0,0,0,5,9C5,12.87,8.13,16,12,16A7,7,0,0,0,19,9C19,5.13,15.87,2,12,2M12,4A5,5,0,0,1,17,9C17,11.38,15.54,14,12,14A5,5,0,0,1,7,9C7,6.62,8.46,4,12,4M8.79,16.5C8.79,16.5,6,17.9,6,20A2,2,0,0,0,8,22H16A2,2,0,0,0,18,20C18,17.9,15.21,16.5,15.21,16.5L12,18L8.79,16.5Z" />
   </svg>
 );
 

@@ -1,6 +1,6 @@
 {
-  "name": "SIMPAN GONTA",
-  "description": "Sistem Informasi Perkemahan dan Perlombaan Pramuka Gondangwetan. Aplikasi ini mendukung kegiatan perkemahan Pramuka dengan sistem digital yang memudahkan panitia mengatur lomba, juri memberikan nilai, dan publik memantau hasil lomba secara real-time.",
+  "name": "KWARRAN GONTA",
+  "description": "Aplikasi Resmi KWARRAN GONTA. Sistem digital untuk manajemen perkemahan dan perlombaan Pramuka di Kwartir Ranting Gondangwetan. Memudahkan panitia, juri, dan peserta dalam mengelola dan memantau kegiatan secara real-time.",
   "requestFramePermissions": [],
   "prompt": ""
 }

@@ -1,11 +1,12 @@
 
 
 
+
 import React, { useState, useContext } from 'react';
 import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../App';
 import { UserRole } from '../types';
-import { AppColors, AppRoutes, ScoutBadgeIcon, MenuIcon, CloseIcon, BuildingOfficeIcon } from '../constants';
+import { AppColors, AppRoutes, TunasKelapaIcon, MenuIcon, CloseIcon, BuildingOfficeIcon } from '../constants';
 
 const Header: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -18,8 +19,8 @@ const Header: React.FC = () => {
     };
     
     const baseLinkClasses = "px-3 py-2 rounded-md text-sm font-medium transition-colors";
-    const inactiveLinkClasses = `text-white hover:bg-green-700 hover:text-white`;
-    const activeLinkClasses = `bg-green-900 text-white`;
+    const inactiveLinkClasses = `text-white hover:bg-amber-800 hover:text-white`;
+    const activeLinkClasses = `bg-amber-900 text-white`;
 
     const getLinkClass = ({ isActive }: { isActive: boolean }) => isActive ? `${baseLinkClasses} ${activeLinkClasses}` : `${baseLinkClasses} ${inactiveLinkClasses}`;
     
@@ -71,15 +72,15 @@ const Header: React.FC = () => {
                 <div className="flex items-center justify-between h-20">
                     <div className="flex items-center">
                         <NavLink to={AppRoutes.home} className="flex-shrink-0 flex items-center text-white">
-                            <ScoutBadgeIcon className="h-10 w-10 mr-2" />
-                            <span className="font-bold text-xl tracking-tight">SIMPAN GONTA</span>
+                            <TunasKelapaIcon className="h-10 w-10 mr-3" />
+                            <span className="font-bold text-xl tracking-tight">KWARRAN GONTA</span>
                         </NavLink>
                     </div>
                     <div className="hidden md:block">
                         {navLinks}
                     </div>
                     <div className="md:hidden">
-                        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="inline-flex items-center justify-center p-2 rounded-md text-white hover:bg-green-700 focus:outline-none">
+                        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="inline-flex items-center justify-center p-2 rounded-md text-white hover:bg-amber-800 focus:outline-none">
                             {isMenuOpen ? <CloseIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
                         </button>
                     </div>

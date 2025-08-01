@@ -220,7 +220,7 @@ export const TeamListPage: React.FC = () => {
 
             <div className="hidden print:block text-center mb-8">
                 <h1 className="text-2xl font-bold border-b-2 border-black pb-2 mb-4">Laporan Daftar Peserta</h1>
-                <h2 className="text-xl font-semibold">SIMPAN GONTA - Perkemahan Pramuka Gondangwetan</h2>
+                <h2 className="text-xl font-semibold">KWARRAN GONTA - Perkemahan Pramuka Gondangwetan</h2>
                 <p className="text-sm mt-1">
                     Dicetak pada: {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
                 </p>
