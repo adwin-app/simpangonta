@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { AuthContext } from '../../App';
 import { apiService } from '../../services/api';
@@ -332,7 +333,7 @@ export const JudgePortalPage: React.FC = () => {
                 <h1 className="text-3xl font-bold">Portal Penilaian Juri</h1>
                 <h2 className="text-2xl font-semibold mt-1" style={{color: AppColors.primary}}>
                     Lomba: {myCompetition.name} 
-                    {auth.assignedTeamType ? ` (Hanya Regu ${auth.assignedTeamType})` : ''}
+                    {auth?.assignedTeamType ? ` (Hanya Regu ${auth.assignedTeamType})` : ''}
                 </h2>
             </div>
             
