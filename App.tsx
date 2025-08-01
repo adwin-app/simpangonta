@@ -26,7 +26,8 @@ interface AuthContextType {
     schoolName: string | null;
     assignedCompetitionId: string | null;
     assignedTeamType: 'Putra' | 'Putri' | null;
-    login: (role: UserRole, identifier: string, details?: { assignedCompetitionId?: string; schoolName?: string; assignedTeamType?: 'Putra' | 'Putri' | null; }) => void;
+    assignedCriteriaIds: string[] | null;
+    login: (role: UserRole, identifier: string, details?: { assignedCompetitionId?: string; schoolName?: string; assignedTeamType?: 'Putra' | 'Putri' | null; assignedCriteriaIds?: string[] }) => void;
     logout: () => void;
 }
 
@@ -50,8 +51,12 @@ const App: React.FC = () => {
     const [schoolName, setSchoolName] = useState<string | null>(() => localStorage.getItem('simpan-gonta-schoolName'));
     const [assignedCompetitionId, setAssignedCompetitionId] = useState<string | null>(() => localStorage.getItem('simpan-gonta-assignedCompetitionId'));
     const [assignedTeamType, setAssignedTeamType] = useState<'Putra' | 'Putri' | null>(() => localStorage.getItem('simpan-gonta-assignedTeamType') as 'Putra' | 'Putri' | null);
+    const [assignedCriteriaIds, setAssignedCriteriaIds] = useState<string[] | null>(() => {
+        const stored = localStorage.getItem('simpan-gonta-assignedCriteriaIds');
+        return stored ? JSON.parse(stored) : null;
+    });
 
-    const login = useCallback((userRole: UserRole, userIdentifier: string, details?: { assignedCompetitionId?: string; schoolName?: string; assignedTeamType?: 'Putra' | 'Putri' | null; }) => {
+    const login = useCallback((userRole: UserRole, userIdentifier: string, details?: { assignedCompetitionId?: string; schoolName?: string; assignedTeamType?: 'Putra' | 'Putri' | null; assignedCriteriaIds?: string[] }) => {
         localStorage.setItem('simpan-gonta-role', userRole);
         localStorage.setItem('simpan-gonta-identifier', userIdentifier);
         setRole(userRole);
@@ -75,6 +80,13 @@ const App: React.FC = () => {
             localStorage.removeItem('simpan-gonta-assignedTeamType');
             setAssignedTeamType(null);
         }
+        if (details?.assignedCriteriaIds) {
+            localStorage.setItem('simpan-gonta-assignedCriteriaIds', JSON.stringify(details.assignedCriteriaIds));
+            setAssignedCriteriaIds(details.assignedCriteriaIds);
+        } else {
+            localStorage.removeItem('simpan-gonta-assignedCriteriaIds');
+            setAssignedCriteriaIds(null);
+        }
     }, []);
 
     const logout = useCallback(() => {
@@ -83,14 +95,16 @@ const App: React.FC = () => {
         localStorage.removeItem('simpan-gonta-assignedCompetitionId');
         localStorage.removeItem('simpan-gonta-schoolName');
         localStorage.removeItem('simpan-gonta-assignedTeamType');
+        localStorage.removeItem('simpan-gonta-assignedCriteriaIds');
         setRole(null);
         setIdentifier(null);
         setAssignedCompetitionId(null);
         setSchoolName(null);
         setAssignedTeamType(null);
+        setAssignedCriteriaIds(null);
     }, []);
 
-    const authContextValue = useMemo(() => ({ role, identifier, assignedCompetitionId, assignedTeamType, schoolName, login, logout }), [role, identifier, assignedCompetitionId, assignedTeamType, schoolName, login, logout]);
+    const authContextValue = useMemo(() => ({ role, identifier, assignedCompetitionId, assignedTeamType, assignedCriteriaIds, schoolName, login, logout }), [role, identifier, assignedCompetitionId, assignedTeamType, assignedCriteriaIds, schoolName, login, logout]);
 
     return (
         <AuthContext.Provider value={authContextValue}>

@@ -14,7 +14,7 @@ export const ManageJudgesPage: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [addError, setAddError] = useState('');
 
-    const [assignments, setAssignments] = useState<{ [judgeId: string]: { competitionId: string; teamType: string; } }>({});
+    const [assignments, setAssignments] = useState<{ [judgeId: string]: { competitionId: string; teamType: string; criteriaIds: string[] } }>({});
     
     const fetchData = async () => {
         setLoading(true);
@@ -26,11 +26,12 @@ export const ManageJudgesPage: React.FC = () => {
             setJudges(judgesData);
             setCompetitions(competitionsData);
 
-            const initialAssignments: { [judgeId: string]: { competitionId: string; teamType: string; } } = {};
+            const initialAssignments: { [judgeId: string]: { competitionId: string; teamType: string; criteriaIds: string[] } } = {};
             judgesData.forEach(j => {
                 initialAssignments[j.id] = {
                     competitionId: j.assignedCompetitionId || '',
-                    teamType: j.assignedTeamType || ''
+                    teamType: j.assignedTeamType || '',
+                    criteriaIds: j.assignedCriteriaIds || []
                 };
             });
             setAssignments(initialAssignments);
@@ -80,11 +81,11 @@ export const ManageJudgesPage: React.FC = () => {
     
     const handleAssignmentChange = (judgeId: string, field: 'competitionId' | 'teamType', value: string) => {
         setAssignments(prev => {
-            const currentAssignment = { ...(prev[judgeId] || { competitionId: '', teamType: '' }) };
+            const currentAssignment = { ...(prev[judgeId] || { competitionId: '', teamType: '', criteriaIds: [] }) };
             currentAssignment[field] = value;
-            // if competition is removed, team type assignment is also removed
-            if (field === 'competitionId' && !value) {
-                currentAssignment.teamType = '';
+            // if competition is changed, reset criteria selection
+            if (field === 'competitionId') {
+                currentAssignment.criteriaIds = [];
             }
             return {
                 ...prev,
@@ -93,12 +94,28 @@ export const ManageJudgesPage: React.FC = () => {
         });
     };
 
+    const handleCriteriaChange = (judgeId: string, criterionId: string, isChecked: boolean) => {
+        setAssignments(prev => {
+            const currentAssignment = { ...prev[judgeId] };
+            const currentCriteria = currentAssignment.criteriaIds || [];
+            if (isChecked) {
+                if (!currentCriteria.includes(criterionId)) {
+                    currentAssignment.criteriaIds = [...currentCriteria, criterionId];
+                }
+            } else {
+                currentAssignment.criteriaIds = currentCriteria.filter(id => id !== criterionId);
+            }
+            return { ...prev, [judgeId]: currentAssignment };
+        });
+    };
+
     const handleSaveAssignment = async (judgeId: string) => {
-        const { competitionId, teamType } = assignments[judgeId];
+        const { competitionId, teamType, criteriaIds } = assignments[judgeId];
         try {
             await apiService.updateUser(judgeId, { 
                 assignedCompetitionId: competitionId,
-                assignedTeamType: teamType
+                assignedTeamType: teamType,
+                assignedCriteriaIds: criteriaIds,
             });
             alert('Tugas juri berhasil disimpan.');
             fetchData(); // Refresh to update competition name and type
@@ -155,7 +172,7 @@ export const ManageJudgesPage: React.FC = () => {
                            <thead className="bg-gray-50">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tugas</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Penugasan</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                                 </tr>
                            </thead>
@@ -164,35 +181,77 @@ export const ManageJudgesPage: React.FC = () => {
                                     <tr key={judge.id}>
                                         <td className="px-6 py-4 whitespace-nowrap align-top">
                                             <p className="font-medium text-gray-900">{judge.username}</p>
-                                            {judge.assignedCompetitionName && (
-                                                <p className="text-xs text-gray-500 mt-1">
-                                                    Bertugas di: {judge.assignedCompetitionName} 
-                                                    {judge.assignedTeamType ? ` (${judge.assignedTeamType})` : ' (Semua)'}
-                                                </p>
-                                            )}
+                                            {judge.assignedCompetitionName && (() => {
+                                                const competition = competitions.find(c => c.id === judge.assignedCompetitionId);
+                                                const totalCriteria = competition ? competition.criteria.length : 0;
+                                                const assignedCriteriaCount = judge.assignedCriteriaIds?.length || 0;
+                                                
+                                                let criteriaText = ' - Semua Kriteria';
+                                                if (totalCriteria > 0 && assignedCriteriaCount > 0 && assignedCriteriaCount < totalCriteria) {
+                                                    criteriaText = ` - ${assignedCriteriaCount}/${totalCriteria} Kriteria`;
+                                                }
+                                                
+                                                return (
+                                                    <p className="text-xs text-gray-500 mt-1">
+                                                        Bertugas di: {judge.assignedCompetitionName}
+                                                        {judge.assignedTeamType ? ` (${judge.assignedTeamType})` : ' (Semua Kategori)'}
+                                                        {criteriaText}
+                                                    </p>
+                                                )
+                                            })()}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex flex-col md:flex-row md:items-center gap-2">
-                                                <Select
-                                                  value={assignments[judge.id]?.competitionId || ''}
-                                                  onChange={e => handleAssignmentChange(judge.id, 'competitionId', e.target.value)}
-                                                  className="w-full"
-                                                >
-                                                    <option value="">-- Pilih Lomba --</option>
-                                                    {competitions.map(comp => (
-                                                        <option key={comp.id} value={comp.id}>{comp.name}</option>
-                                                    ))}
-                                                </Select>
-                                                <Select
-                                                  value={assignments[judge.id]?.teamType || ''}
-                                                  onChange={e => handleAssignmentChange(judge.id, 'teamType', e.target.value)}
-                                                  className="w-full"
-                                                  disabled={!assignments[judge.id]?.competitionId}
-                                                >
-                                                    <option value="">Semua (Putra & Putri)</option>
-                                                    <option value="Putra">Putra Saja</option>
-                                                    <option value="Putri">Putri Saja</option>
-                                                </Select>
+                                        <td className="px-6 py-4 whitespace-nowrap align-top">
+                                            <div className="space-y-2">
+                                                <div className="flex flex-col md:flex-row md:items-center gap-2">
+                                                    <Select
+                                                      value={assignments[judge.id]?.competitionId || ''}
+                                                      onChange={e => handleAssignmentChange(judge.id, 'competitionId', e.target.value)}
+                                                      className="w-full md:w-48"
+                                                    >
+                                                        <option value="">-- Pilih Lomba --</option>
+                                                        {competitions.map(comp => (
+                                                            <option key={comp.id} value={comp.id}>{comp.name}</option>
+                                                        ))}
+                                                    </Select>
+                                                    <Select
+                                                      value={assignments[judge.id]?.teamType || ''}
+                                                      onChange={e => handleAssignmentChange(judge.id, 'teamType', e.target.value)}
+                                                      className="w-full md:w-48"
+                                                      disabled={!assignments[judge.id]?.competitionId}
+                                                    >
+                                                        <option value="">Semua (Putra & Putri)</option>
+                                                        <option value="Putra">Putra Saja</option>
+                                                        <option value="Putri">Putri Saja</option>
+                                                    </Select>
+                                                </div>
+                                                
+                                                {(() => {
+                                                    const assignedCompId = assignments[judge.id]?.competitionId;
+                                                    if (!assignedCompId) return null;
+
+                                                    const competition = competitions.find(c => c.id === assignedCompId);
+                                                    if (!competition || competition.criteria.length === 0) return null;
+
+                                                    return (
+                                                        <div className="p-2 border rounded-md bg-gray-50/50 max-w-sm">
+                                                            <label className="text-xs font-medium text-gray-600 mb-2 block">Kriteria yang Dinilai (kosongkan untuk menilai semua):</label>
+                                                            <div className="space-y-1 max-h-32 overflow-y-auto">
+                                                                {competition.criteria.map(criterion => (
+                                                                    <div key={criterion.id} className="flex items-center">
+                                                                        <input 
+                                                                            type="checkbox" 
+                                                                            id={`crit-${judge.id}-${criterion.id}`} 
+                                                                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                                                            checked={(assignments[judge.id]?.criteriaIds || []).includes(criterion.id)}
+                                                                            onChange={(e) => handleCriteriaChange(judge.id, criterion.id, e.target.checked)}
+                                                                        />
+                                                                        <label htmlFor={`crit-${judge.id}-${criterion.id}`} className="ml-2 block text-sm text-gray-700">{criterion.name}</label>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })()}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap align-top">

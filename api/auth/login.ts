@@ -41,6 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             role: user.role,
             assignedCompetitionId: user.assignedCompetitionId,
             assignedTeamType: user.assignedTeamType,
+            assignedCriteriaIds: user.assignedCriteriaIds,
         });
 
     } catch (error) {

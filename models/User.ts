@@ -8,6 +8,7 @@ export interface IUserDocument extends Document {
   role: UserRole;
   assignedCompetitionId?: string;
   assignedTeamType?: 'Putra' | 'Putri';
+  assignedCriteriaIds?: string[];
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -17,6 +18,7 @@ const UserSchema = new Schema<IUserDocument>({
   role: { type: String, required: true, enum: Object.values(UserRole) },
   assignedCompetitionId: { type: String, default: null },
   assignedTeamType: { type: String, enum: ['Putra', 'Putri'], default: null },
+  assignedCriteriaIds: { type: [String], default: [] },
 }, {
   timestamps: true,
 });

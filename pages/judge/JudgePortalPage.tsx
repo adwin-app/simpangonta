@@ -19,7 +19,7 @@ const calculateTotal = (scores: { [criterionId: string]: string }): number => {
 // Component for a single row in the scoring table.
 const TeamScoreRow: React.FC<{
     team: Team;
-    competition: Competition;
+    criteria: Criterion[];
     scoreInput: ScoreInput;
     isEditing: boolean;
     isSaving: boolean;
@@ -31,7 +31,7 @@ const TeamScoreRow: React.FC<{
     onNotesChange: (teamId: string, value: string) => void;
 }> = ({
     team,
-    competition,
+    criteria,
     scoreInput,
     isEditing,
     isSaving,
@@ -51,7 +51,7 @@ const TeamScoreRow: React.FC<{
                 <div className="text-sm font-medium text-gray-900">{team.teamName}</div>
                 <div className="text-sm text-gray-500">{team.school}</div>
             </td>
-            {competition.criteria.map(crit => (
+            {criteria.map(crit => (
                 <td key={crit.id} className="px-4 py-4">
                     {isEditing ? (
                         <Input
@@ -260,9 +260,24 @@ export const JudgePortalPage: React.FC = () => {
     const renderTeamTable = (teams: Team[], title: string) => {
         if (!myCompetition) return null;
         if (teams.length === 0) {
-            // Don't show the table at all if there are no teams for this category
             return null;
         }
+        
+        const visibleCriteria = (auth?.assignedCriteriaIds && auth.assignedCriteriaIds.length > 0)
+            ? myCompetition.criteria.filter(c => auth.assignedCriteriaIds.includes(c.id))
+            : myCompetition.criteria;
+
+        if (visibleCriteria.length === 0) {
+            return (
+                 <Card>
+                    <h3 className="text-xl font-semibold mb-4">{title}</h3>
+                    <p className="text-gray-500 text-center py-4">
+                        Tidak ada kriteria spesifik yang ditugaskan kepada Anda untuk lomba ini.
+                    </p>
+                </Card>
+            )
+        }
+
         return (
             <Card>
                 <h3 className="text-xl font-semibold mb-4">{title}</h3>
@@ -271,7 +286,7 @@ export const JudgePortalPage: React.FC = () => {
                         <thead className="bg-gray-50">
                             <tr>
                                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Regu</th>
-                                {myCompetition.criteria.map(crit => (
+                                {visibleCriteria.map(crit => (
                                     <th key={crit.id} scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
                                         {crit.name}
                                         <span className="block font-normal text-gray-400">(Max: {crit.maxScore})</span>
@@ -287,7 +302,7 @@ export const JudgePortalPage: React.FC = () => {
                                <TeamScoreRow
                                    key={team.id}
                                    team={team}
-                                   competition={myCompetition}
+                                   criteria={visibleCriteria}
                                    scoreInput={scoreInputs[team.id] || { scores: {}, notes: '' }}
                                    isEditing={editingTeamId === team.id}
                                    isSaving={isRowSaving === team.id}

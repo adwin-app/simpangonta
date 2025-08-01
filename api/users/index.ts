@@ -12,6 +12,7 @@ const toUserDTO = (user: any, competitionName?: string): User => ({
     assignedCompetitionId: user.assignedCompetitionId,
     assignedCompetitionName: competitionName || '',
     assignedTeamType: user.assignedTeamType,
+    assignedCriteriaIds: user.assignedCriteriaIds || [],
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -64,13 +65,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         case 'PUT':
             try {
-                const { id, assignedCompetitionId, assignedTeamType } = req.body;
+                const { id, assignedCompetitionId, assignedTeamType, assignedCriteriaIds } = req.body;
                 if (!id) return res.status(400).json({ error: 'User ID is required' });
 
-                const updateData = {
+                const updateData: any = {
                     assignedCompetitionId: assignedCompetitionId || null,
                     assignedTeamType: assignedTeamType || null,
                 };
+
+                if (assignedCompetitionId) {
+                    updateData.assignedCriteriaIds = Array.isArray(assignedCriteriaIds) ? assignedCriteriaIds : [];
+                } else {
+                    updateData.assignedCriteriaIds = [];
+                }
 
                 const updatedUser = await UserModel.findByIdAndUpdate(
                     id,

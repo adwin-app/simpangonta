@@ -25,7 +25,8 @@ export const LoginPage: React.FC = () => {
             if (user && user.role === UserRole.JURI) {
                 auth?.login(user.role, user.id, { 
                     assignedCompetitionId: user.assignedCompetitionId,
-                    assignedTeamType: user.assignedTeamType 
+                    assignedTeamType: user.assignedTeamType,
+                    assignedCriteriaIds: user.assignedCriteriaIds
                 });
                 navigate(AppRoutes.judgePortal);
             } else {

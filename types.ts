@@ -13,6 +13,7 @@ export interface User {
     assignedCompetitionId?: string;
     assignedCompetitionName?: string;
     assignedTeamType?: 'Putra' | 'Putri' | null;
+    assignedCriteriaIds?: string[];
 }
 
 export interface School {
