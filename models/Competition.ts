@@ -12,6 +12,7 @@ const CriterionSchema = new Schema<Criterion>({
 export interface ICompetition {
     name: string;
     criteria: Criterion[];
+    participantsPerTeam: number;
 }
 
 // The full Mongoose document interface now extends the data interface and Document.
@@ -21,6 +22,7 @@ export interface ICompetitionDocument extends ICompetition, Document {}
 const CompetitionSchema = new Schema<ICompetitionDocument>({
   name: { type: String, required: true, unique: true },
   criteria: { type: [CriterionSchema], required: true },
+  participantsPerTeam: { type: Number, required: true, default: 1 }, // 0 means all
 });
 
 const CompetitionModel: Model<ICompetitionDocument> = (mongoose.models.Competition as Model<ICompetitionDocument>) || mongoose.model<ICompetitionDocument>('Competition', CompetitionSchema);

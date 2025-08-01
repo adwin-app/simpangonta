@@ -10,6 +10,7 @@ const ScoreSchema = new Schema<IScoreDocument>({
   scoresByCriterion: { type: Map, of: Number, required: true },
   totalScore: { type: Number, required: true },
   notes: { type: String },
+  participants: { type: [String], default: [] },
 }, {
   timestamps: true,
 });

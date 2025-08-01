@@ -12,6 +12,7 @@ const toScoreDTO = (score: any): Score => ({
     scoresByCriterion: score.scoresByCriterion,
     totalScore: score.totalScore,
     notes: score.notes,
+    participants: score.participants || [],
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -35,13 +36,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             break;
         case 'POST':
             try {
-                const { teamId, competitionId, judgeId, scoresByCriterion, totalScore, notes } = req.body;
+                const { teamId, competitionId, judgeId, scoresByCriterion, totalScore, notes, participants } = req.body;
                 if (!teamId || !competitionId || !judgeId || !scoresByCriterion) {
                     return res.status(400).json({ error: 'Missing required fields for score submission.' });
                 }
 
                 const filter = { teamId, competitionId, judgeId };
-                const update = { scoresByCriterion, totalScore, notes };
+                const update = { scoresByCriterion, totalScore, notes, participants };
                 const options = { upsert: true, new: true, setDefaultsOnInsert: true };
 
                 const score = await ScoreModel.findOneAndUpdate(filter, update, options);
