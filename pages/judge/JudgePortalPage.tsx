@@ -175,7 +175,8 @@ export const JudgePortalPage: React.FC = () => {
     const auth = useContext(AuthContext);
 
     const loadData = async () => {
-        if (!auth?.identifier || !auth.assignedCompetitionId) {
+        // Added a more robust check to ensure auth object and its properties are valid
+        if (!auth || !auth.identifier || !auth.assignedCompetitionId) {
             setLoading(false);
             return;
         }
@@ -210,7 +211,7 @@ export const JudgePortalPage: React.FC = () => {
 
     useEffect(() => {
         loadData();
-    }, [auth?.identifier, auth?.assignedCompetitionId, auth?.assignedTeamType]);
+    }, [auth]);
 
 
     const handleSaveScore = async (teamId: string, scoreData: ScoreInput) => {
@@ -262,7 +263,7 @@ export const JudgePortalPage: React.FC = () => {
                                         <td className="px-4 py-4 whitespace-nowrap">
                                             <div className="text-sm font-medium text-gray-900">{team.teamName}</div>
                                             <div className="text-sm text-gray-500">{team.school}</div>
-                                             {hasScore && score.participants.length > 0 && (
+                                             {score && score.participants && score.participants.length > 0 && (
                                                 <div className="text-xs text-gray-600 mt-2">
                                                     <span className="font-semibold">Peserta: </span>
                                                     {score.participants.join(', ')}
@@ -271,7 +272,7 @@ export const JudgePortalPage: React.FC = () => {
                                         </td>
                                         <td className="px-4 py-4">
                                              <span className={`font-bold text-lg ${hasScore ? 'text-gray-900' : 'text-gray-400'}`}>
-                                                {hasScore ? score.totalScore : 'Belum dinilai'}
+                                                {score ? score.totalScore : 'Belum dinilai'}
                                             </span>
                                         </td>
                                         <td className="px-4 py-4">
