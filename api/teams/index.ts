@@ -14,6 +14,7 @@ const toTeamDTO = (team: any): Team => ({
     coachName: team.coachName,
     coachPhone: team.coachPhone,
     members: team.members,
+    campNumber: team.campNumber,
 });
 
 
@@ -33,11 +34,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             break;
         case 'POST':
             try {
-                const newTeam = new TeamModel(req.body);
+                const teamData = req.body;
+                // if campNumber is an empty string, treat it as not provided.
+                if (!teamData.campNumber) {
+                    delete teamData.campNumber;
+                }
+                const newTeam = new TeamModel(teamData);
                 await newTeam.save();
                 res.status(201).json(toTeamDTO(newTeam));
             } catch (error: any) {
                  if (error.code === 11000) {
+                    if (error.keyPattern?.campNumber) {
+                        return res.status(409).json({ error: `Nomor tapak kemah "${error.keyValue.campNumber}" sudah digunakan.` });
+                    }
                     const existingTeam = await TeamModel.findOne({ school: req.body.school, type: req.body.type, teamName: req.body.teamName });
                     if(existingTeam){
                        return res.status(409).json({ error: `Nama regu "${req.body.teamName}" sudah digunakan oleh sekolah Anda untuk kategori ${req.body.type}.` });
@@ -54,6 +63,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     return res.status(400).json({ error: 'Team ID is required.' });
                 }
                 
+                // If campNumber is empty string, convert it to null so it's not indexed by sparse unique index
+                if (teamData.campNumber === '') {
+                    teamData.campNumber = null;
+                }
+                
                 const updatedTeam = await TeamModel.findByIdAndUpdate(id, teamData, { new: true });
                 
                 if (!updatedTeam) {
@@ -63,6 +77,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 res.status(200).json(toTeamDTO(updatedTeam));
             } catch (error: any) {
                 if (error.code === 11000) {
+                     if (error.keyPattern?.campNumber) {
+                        return res.status(409).json({ error: `Nomor tapak kemah "${error.keyValue.campNumber}" sudah digunakan.` });
+                    }
                     return res.status(409).json({ error: `Kombinasi nama regu, sekolah, dan jenis yang Anda masukkan sudah ada.` });
                 }
                 res.status(500).json({ error: 'Error updating team' });

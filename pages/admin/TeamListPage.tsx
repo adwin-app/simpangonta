@@ -73,10 +73,15 @@ const EditTeamModal: React.FC<{
                             <Input {...register('coachName', { required: 'Nama pembina wajib diisi' })} />
                             {errors.coachName && <p className="text-red-500 text-xs mt-1">{errors.coachName.message}</p>}
                         </div>
-                        <div className="md:col-span-2">
+                        <div className="md:col-span-1">
                             <label className="block text-sm font-medium text-gray-700 mb-1">No. HP Pembina</label>
                             <Input type="tel" {...register('coachPhone', { required: 'No. HP wajib diisi' })} />
                             {errors.coachPhone && <p className="text-red-500 text-xs mt-1">{errors.coachPhone.message}</p>}
+                        </div>
+                         <div className="md:col-span-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Tapak Kemah</label>
+                            <Input {...register('campNumber')} placeholder="Opsional, cth: A1" />
+                            {errors.campNumber && <p className="text-red-500 text-xs mt-1">{errors.campNumber.message}</p>}
                         </div>
                     </div>
                     <div>
@@ -135,6 +140,12 @@ const TeamCard: React.FC<{
                 <p className="font-semibold">No. HP Pembina:</p>
                 <p className="text-gray-700">{team.coachPhone}</p>
             </div>
+             {team.campNumber && (
+                 <div className="md:col-span-2">
+                    <p className="font-semibold">Nomor Tapak Kemah:</p>
+                    <p className="text-gray-700 font-bold text-base">{team.campNumber}</p>
+                </div>
+            )}
         </div>
         <div>
             <p className="font-semibold mb-2">Anggota Regu:</p>

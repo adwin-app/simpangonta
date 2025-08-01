@@ -1,4 +1,5 @@
 
+
 export enum UserRole {
   ADMIN = 'ADMIN',
   JURI = 'JURI',
@@ -41,6 +42,7 @@ export interface Team {
   coachName: string;
   coachPhone: string;
   members: string[];
+  campNumber?: string;
 }
 
 export interface Score {

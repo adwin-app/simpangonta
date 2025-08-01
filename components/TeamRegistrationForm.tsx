@@ -22,7 +22,8 @@ export const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({ onTe
             type: 'Putra',
             coachName: '',
             coachPhone: '',
-            members: Array(10).fill('')
+            members: Array(10).fill(''),
+            campNumber: ''
         }
     });
     
@@ -97,6 +98,11 @@ export const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({ onTe
                     <label className="block text-sm font-medium text-gray-700 mb-1">No. HP Pembina</label>
                     <Input type="tel" {...register('coachPhone', { required: 'No. HP wajib diisi' })} />
                     {errors.coachPhone && <p className="text-red-500 text-xs mt-1">{errors.coachPhone.message}</p>}
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Tapak Kemah</label>
+                    <Input {...register('campNumber')} placeholder="Opsional, cth: A1" />
+                    {errors.campNumber && <p className="text-red-500 text-xs mt-1">{errors.campNumber.message}</p>}
                 </div>
             </div>
             <div>
