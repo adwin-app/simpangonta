@@ -13,10 +13,16 @@ const toTeamDTO = (team: any): Team => ({
     type: team.type,
     coachName: team.coachName,
     coachPhone: team.coachPhone,
-    members: team.members.map((m: any) => ({
-        name: m.name,
-        participatedCompetitions: m.participatedCompetitions || [],
-    })),
+    members: (team.members || []).map((m: any) => {
+        // Handle both old string-based members and new object-based members for backward compatibility
+        if (typeof m === 'string') {
+            return { name: m, participatedCompetitions: [] };
+        }
+        return {
+            name: m.name,
+            participatedCompetitions: m.participatedCompetitions || [],
+        };
+    }),
     campNumber: team.campNumber,
 });
 
