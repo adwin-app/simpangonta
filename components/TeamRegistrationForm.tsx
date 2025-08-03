@@ -1,11 +1,13 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { apiService } from '../services/api';
-import { Team, UserRole } from '../types';
+import { Team, UserRole, TeamMember, Competition } from '../types';
 import { Button, Input, Select } from './UI';
 import { AuthContext } from '../App';
 
-type FormInputs = Omit<Team, 'id' | 'schoolId'>;
+type FormInputs = Omit<Team, 'id' | 'schoolId' | 'members'> & {
+    members: TeamMember[];
+};
 
 interface TeamRegistrationFormProps {
     onTeamRegistered?: () => void;
@@ -14,6 +16,24 @@ interface TeamRegistrationFormProps {
 export const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({ onTeamRegistered }) => {
     const auth = useContext(AuthContext);
     const isSchoolUser = auth?.role === UserRole.SEKOLAH;
+    const [competitions, setCompetitions] = useState<Competition[]>([]);
+    const [loadingCompetitions, setLoadingCompetitions] = useState(true);
+
+    useEffect(() => {
+        const fetchCompetitions = async () => {
+            setLoadingCompetitions(true);
+            try {
+                const comps = await apiService.getCompetitions();
+                const filteredComps = comps.filter(c => c.name.toLowerCase() !== 'tapak kemah');
+                setCompetitions(filteredComps);
+            } catch (error) {
+                console.error("Failed to fetch competitions for form:", error);
+            } finally {
+                setLoadingCompetitions(false);
+            }
+        };
+        fetchCompetitions();
+    }, []);
 
     const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<FormInputs>({
         defaultValues: {
@@ -22,7 +42,7 @@ export const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({ onTe
             type: 'Putra',
             coachName: '',
             coachPhone: '',
-            members: Array(10).fill(''),
+            members: Array(10).fill({ name: '', participatedCompetitions: [] }),
             campNumber: ''
         }
     });
@@ -37,7 +57,12 @@ export const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({ onTe
             const teamData = {
                 ...data,
                 schoolId: isSchoolUser ? auth.identifier : undefined,
-                members: data.members.map(m => m.trim()).filter(m => m),
+                members: data.members
+                    .filter(m => m.name && m.name.trim() !== '')
+                    .map(m => ({
+                        name: m.name.trim(),
+                        participatedCompetitions: m.participatedCompetitions || []
+                    })),
             };
 
             if (teamData.members.length === 0) {
@@ -47,7 +72,7 @@ export const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({ onTe
                 return;
             }
 
-            await apiService.addTeam(teamData);
+            await apiService.addTeam(teamData as any);
             setSubmitMessage(`Regu "${data.teamName}" berhasil didaftarkan!`);
             reset();
             if (isSchoolUser) {
@@ -107,16 +132,41 @@ export const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({ onTe
             </div>
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nama Anggota (Maks 10)</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-2 p-4 border rounded-lg">
+                <div className="space-y-4 mt-2 p-4 border rounded-lg">
                     {Array.from({ length: 10 }).map((_, index) => (
-                        <div key={index}>
-                            <label htmlFor={`member-${index}`} className="text-xs text-gray-600">Anggota {index + 1}</label>
-                            <Input
-                                id={`member-${index}`}
-                                {...register(`members.${index}` as const)}
-                                placeholder={`Nama Anggota ${index + 1}`}
-                                className="mt-1"
-                            />
+                        <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-gray-50 rounded-md border">
+                            <div>
+                                <label htmlFor={`member-${index}-name`} className="text-xs text-gray-600">Anggota {index + 1}</label>
+                                <Input
+                                    id={`member-${index}-name`}
+                                    {...register(`members.${index}.name` as const)}
+                                    placeholder={`Nama Anggota ${index + 1}`}
+                                    className="mt-1"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-600 mb-2 block">Lomba yang Diikuti (Opsional)</label>
+                                {loadingCompetitions ? (
+                                    <p className="text-xs text-gray-400">Memuat lomba...</p>
+                                ) : competitions.length > 0 ? (
+                                    <div className="space-y-1 max-h-24 overflow-y-auto">
+                                        {competitions.map(comp => (
+                                            <div key={comp.id} className="flex items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    id={`member-${index}-comp-${comp.id}`}
+                                                    {...register(`members.${index}.participatedCompetitions` as const)}
+                                                    value={comp.id}
+                                                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                                />
+                                                <label htmlFor={`member-${index}-comp-${comp.id}`} className="ml-2 block text-sm text-gray-700">{comp.name}</label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-gray-400">Tidak ada lomba yang bisa dipilih.</p>
+                                )}
+                            </div>
                         </div>
                     ))}
                 </div>

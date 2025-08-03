@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import connectMongo from '../../lib/mongodb';
 import TeamModel from '../../models/Team';
 import ScoreModel from '../../models/Score';
-import { Team } from '../../types';
+import { Team, TeamMember } from '../../types';
 
 // Helper to convert DB document to a data transfer object (DTO) for the frontend
 const toTeamDTO = (team: any): Team => ({
@@ -13,7 +13,10 @@ const toTeamDTO = (team: any): Team => ({
     type: team.type,
     coachName: team.coachName,
     coachPhone: team.coachPhone,
-    members: team.members,
+    members: team.members.map((m: any) => ({
+        name: m.name,
+        participatedCompetitions: m.participatedCompetitions || [],
+    })),
     campNumber: team.campNumber,
 });
 
@@ -39,6 +42,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 if (!teamData.campNumber) {
                     delete teamData.campNumber;
                 }
+                if (teamData.members) {
+                    teamData.members = teamData.members
+                        .filter((m: TeamMember) => m && m.name && m.name.trim())
+                        .map((m: TeamMember) => ({
+                            name: m.name.trim(),
+                            participatedCompetitions: m.participatedCompetitions || []
+                        }));
+                }
+
                 const newTeam = new TeamModel(teamData);
                 await newTeam.save();
                 res.status(201).json(toTeamDTO(newTeam));
@@ -66,6 +78,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 // If campNumber is empty string, convert it to null so it's not indexed by sparse unique index
                 if (teamData.campNumber === '') {
                     teamData.campNumber = null;
+                }
+                 if (teamData.members) {
+                    teamData.members = teamData.members
+                        .filter((m: TeamMember) => m && m.name && m.name.trim())
+                        .map((m: TeamMember) => ({
+                            name: m.name.trim(),
+                            participatedCompetitions: m.participatedCompetitions || []
+                        }));
                 }
                 
                 const updatedTeam = await TeamModel.findByIdAndUpdate(id, teamData, { new: true });

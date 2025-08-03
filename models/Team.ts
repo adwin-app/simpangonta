@@ -1,7 +1,12 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
-import { Team as ITeam } from '../types';
+import { Team as ITeam, TeamMember } from '../types';
 
 export interface ITeamDocument extends Omit<ITeam, 'id'>, Document {}
+
+const TeamMemberSchema = new Schema<TeamMember>({
+  name: { type: String, required: true },
+  participatedCompetitions: { type: [String], default: [] }
+}, { _id: false });
 
 const TeamSchema = new Schema<ITeamDocument>({
   school: { type: String, required: true },
@@ -10,7 +15,7 @@ const TeamSchema = new Schema<ITeamDocument>({
   type: { type: String, required: true, enum: ['Putra', 'Putri'] },
   coachName: { type: String, required: true },
   coachPhone: { type: String, required: true },
-  members: { type: [String], required: true },
+  members: { type: [TeamMemberSchema], required: true },
   campNumber: { type: String, required: false, unique: true, sparse: true },
 });
 

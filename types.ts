@@ -34,6 +34,11 @@ export interface Competition {
   criteria: Criterion[];
 }
 
+export interface TeamMember {
+  name: string;
+  participatedCompetitions?: string[]; // array of competition IDs
+}
+
 export interface Team {
   id: string;
   school: string;
@@ -42,7 +47,7 @@ export interface Team {
   type: 'Putra' | 'Putri';
   coachName: string;
   coachPhone: string;
-  members: string[];
+  members: TeamMember[];
   campNumber?: string;
 }
 
