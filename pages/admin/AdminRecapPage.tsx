@@ -126,8 +126,8 @@ export const AdminRecapPage: React.FC = () => {
         setLoading(true);
         try {
             const [putraData, putriData, compsData] = await Promise.all([
-                apiService.getLeaderboard('Putra'),
-                apiService.getLeaderboard('Putri'),
+                apiService.getLeaderboard('Putra', true),
+                apiService.getLeaderboard('Putri', true),
                 apiService.getCompetitions()
             ]);
             setPutraLeaderboard(putraData);

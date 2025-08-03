@@ -11,14 +11,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        const { type } = req.query;
+        const { type, includeUnpublished } = req.query;
         if (type !== 'Putra' && type !== 'Putri') {
             return res.status(400).json({ message: 'Type query parameter must be either "Putra" or "Putri"' });
         }
 
         await connectMongo();
 
-        const competitions = await CompetitionModel.find({ isPublished: true }).lean();
+        const competitionQuery = includeUnpublished === 'true' ? {} : { isPublished: true };
+        const competitions = await CompetitionModel.find(competitionQuery).lean();
         const teams = await TeamModel.find({ type }).lean();
         
         if (competitions.length === 0 || teams.length === 0) {

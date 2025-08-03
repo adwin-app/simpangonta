@@ -98,8 +98,12 @@ const addScore = async (scoreData: Omit<Score, 'id'>): Promise<Score> => {
 };
 
 // Misc API
-const getLeaderboard = async (type: 'Putra' | 'Putri'): Promise<LeaderboardEntry[]> => {
-    const response = await fetch(`/api/leaderboard?type=${type}`);
+const getLeaderboard = async (type: 'Putra' | 'Putri', includeUnpublished = false): Promise<LeaderboardEntry[]> => {
+    let url = `/api/leaderboard?type=${type}`;
+    if (includeUnpublished) {
+        url += '&includeUnpublished=true';
+    }
+    const response = await fetch(url);
     return handleResponse(response);
 };
 
