@@ -30,7 +30,7 @@ const addCompetition = async (name: string, criteria: {name: string}[]): Promise
     return handleResponse(response);
 };
 
-const updateCompetition = async (id: string, updatedData: { name: string, criteria: Criterion[] }): Promise<Competition> => {
+const updateCompetition = async (id: string, updatedData: Partial<Omit<Competition, 'id'>>): Promise<Competition> => {
      const response = await fetch(`/api/competitions`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

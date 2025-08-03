@@ -18,8 +18,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         await connectMongo();
 
-        const competitions = await CompetitionModel.find({}).lean();
+        const competitions = await CompetitionModel.find({ isPublished: true }).lean();
         const teams = await TeamModel.find({ type }).lean();
+        
+        if (competitions.length === 0 || teams.length === 0) {
+            return res.status(200).json([]);
+        }
+
         const scores = await ScoreModel.find({ teamId: { $in: teams.map(t => t._id.toString()) } }).lean();
         
         const filteredTeams = teams.map(t => ({...t, id: t._id.toString()}));

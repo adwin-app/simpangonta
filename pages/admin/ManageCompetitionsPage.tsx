@@ -127,6 +127,7 @@ export const ManageCompetitionsPage: React.FC = () => {
     const [newCriteria, setNewCriteria] = useState<{name: string, maxScore: string}[]>([{ name: '', maxScore: '100' }]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingCompetition, setEditingCompetition] = useState<Competition | null>(null);
+    const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
 
     const fetchCompetitions = async () => {
         setLoading(true);
@@ -189,6 +190,25 @@ export const ManageCompetitionsPage: React.FC = () => {
                 console.error("Failed to delete competition:", error);
                 alert(`Gagal menghapus lomba: ${error.message}`);
             }
+        }
+    };
+
+    const handleTogglePublish = async (id: string, isPublished: boolean) => {
+        setUpdatingStatusId(id);
+        const originalCompetitions = [...competitions];
+        
+        // Optimistic update
+        const updatedList = originalCompetitions.map(c => c.id === id ? { ...c, isPublished } : c);
+        setCompetitions(updatedList);
+
+        try {
+            await apiService.updateCompetition(id, { isPublished });
+        } catch (error: any) {
+            console.error("Failed to update competition status:", error);
+            alert(`Gagal mengubah status: ${error.message}`);
+            setCompetitions(originalCompetitions); // Revert on failure
+        } finally {
+            setUpdatingStatusId(null);
         }
     };
 
@@ -259,11 +279,16 @@ export const ManageCompetitionsPage: React.FC = () => {
                             const isTapakKemah = comp.name.toLowerCase() === TAPAK_KEMAH_NAME.toLowerCase();
                             return (
                                 <li key={comp.id} className="p-4 bg-gray-50 rounded-lg">
-                                    <div className="flex justify-between items-start">
-                                        <div>
+                                    <div className="flex justify-between items-start gap-4">
+                                        <div className="flex-grow">
                                             <div className="flex items-center">
                                                 <TrophyIcon className="w-6 h-6 mr-3 text-yellow-500" />
                                                 <span className="text-gray-800 font-bold text-lg">{comp.name}</span>
+                                                {comp.isPublished && (
+                                                    <span className="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                        LIVE
+                                                    </span>
+                                                )}
                                             </div>
                                             <div className="mt-2 ml-9">
                                                 <h4 className="text-sm font-semibold text-gray-600">Kriteria:</h4>
@@ -272,15 +297,31 @@ export const ManageCompetitionsPage: React.FC = () => {
                                                 </ul>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                                             <Button variant="secondary" className="py-1 px-3 text-sm flex items-center" onClick={() => setEditingCompetition(comp)}>
-                                                 <PencilIcon className="w-4 h-4 mr-1"/> Edit
-                                             </Button>
-                                             {!isTapakKemah && (
-                                                 <Button variant="secondary" className="!bg-red-500 hover:!bg-red-600 text-white py-1 px-3 text-sm flex items-center" onClick={() => handleDelete(comp.id, comp.name)}>
-                                                    <TrashIcon className="w-4 h-4 mr-1"/> Hapus
+                                        <div className="flex flex-col items-end gap-3 flex-shrink-0 ml-4">
+                                             <div className="flex items-center gap-2">
+                                                 <Button variant="secondary" className="py-1 px-3 text-sm flex items-center" onClick={() => setEditingCompetition(comp)}>
+                                                     <PencilIcon className="w-4 h-4 mr-1"/> Edit
                                                  </Button>
-                                             )}
+                                                 {!isTapakKemah && (
+                                                     <Button variant="secondary" className="!bg-red-500 hover:!bg-red-600 text-white py-1 px-3 text-sm flex items-center" onClick={() => handleDelete(comp.id, comp.name)}>
+                                                        <TrashIcon className="w-4 h-4 mr-1"/> Hapus
+                                                     </Button>
+                                                 )}
+                                            </div>
+                                            <div className="flex items-center gap-2 p-2 rounded-md bg-white border border-gray-200">
+                                                <label htmlFor={`publish-toggle-${comp.id}`} className="text-sm font-medium text-gray-700 select-none">Live-kan Hasil</label>
+                                                <label className="relative inline-flex items-center cursor-pointer">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        id={`publish-toggle-${comp.id}`}
+                                                        checked={comp.isPublished} 
+                                                        onChange={(e) => handleTogglePublish(comp.id, e.target.checked)} 
+                                                        className="sr-only peer" 
+                                                        disabled={updatingStatusId === comp.id}
+                                                    />
+                                                    <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                                                </label>
+                                            </div>
                                         </div>
                                     </div>
                                 </li>

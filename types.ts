@@ -32,6 +32,7 @@ export interface Competition {
   id:string;
   name: string;
   criteria: Criterion[];
+  isPublished: boolean;
 }
 
 export interface TeamMember {

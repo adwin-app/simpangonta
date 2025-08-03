@@ -12,6 +12,7 @@ const toCompetitionDTO = (comp: any): Competition => ({
     id: comp._id.toString(),
     name: comp.name,
     criteria: comp.criteria.map((c: any) => ({ id: c.id, name: c.name, maxScore: c.maxScore })),
+    isPublished: comp.isPublished,
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -21,9 +22,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case 'GET':
             try {
                 const competitions = await CompetitionModel.find({}).lean();
-                // Handle legacy data that might not have maxScore
+                // Handle legacy data that might not have maxScore or isPublished
                 const competitionsWithDefaults = competitions.map(comp => ({
                     ...comp,
+                    isPublished: comp.isPublished === undefined ? false : comp.isPublished,
                     criteria: comp.criteria.map(crit => ({ ...crit, maxScore: crit.maxScore || 100 }))
                 }))
                 res.status(200).json(competitionsWithDefaults.map(toCompetitionDTO));
@@ -43,7 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     maxScore: c.maxScore || 100
                 }));
 
-                const newCompetition = new CompetitionModel({ name, criteria: criteriaWithIds });
+                const newCompetition = new CompetitionModel({ name, criteria: criteriaWithIds, isPublished: false });
                 await newCompetition.save();
                 res.status(201).json(toCompetitionDTO(newCompetition));
             } catch (error: any) {
@@ -55,25 +57,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             break;
         case 'PUT':
             try {
-                const { id, name, criteria } = req.body;
-                if (!id || !name || !criteria || !Array.isArray(criteria)) {
-                    return res.status(400).json({ error: 'ID, name and criteria are required.' });
+                const { id, ...updateData } = req.body;
+                if (!id) {
+                    return res.status(400).json({ error: 'Competition ID is required.' });
                 }
 
-                const existingCompetition = await CompetitionModel.findById(id).lean();
-                if (existingCompetition && existingCompetition.name.toLowerCase() === TAPAK_KEMAH_NAME.toLowerCase() && name.toLowerCase() !== TAPAK_KEMAH_NAME.toLowerCase()) {
-                    return res.status(403).json({ error: 'Nama lomba "Tapak Kemah" tidak dapat diubah karena merupakan lomba inti.' });
+                if (updateData.name) {
+                    const existingCompetition = await CompetitionModel.findById(id).lean();
+                    if (existingCompetition && existingCompetition.name.toLowerCase() === TAPAK_KEMAH_NAME.toLowerCase() && updateData.name.toLowerCase() !== TAPAK_KEMAH_NAME.toLowerCase()) {
+                        return res.status(403).json({ error: 'Nama lomba "Tapak Kemah" tidak dapat diubah karena merupakan lomba inti.' });
+                    }
                 }
 
-                const criteriaWithIds = criteria.map((c: Criterion) => ({
-                    id: c.id.startsWith('new-') ? uuidv4() : c.id,
-                    name: c.name,
-                    maxScore: c.maxScore || 100,
-                }));
+                if (updateData.criteria && Array.isArray(updateData.criteria)) {
+                    updateData.criteria = updateData.criteria.map((c: Criterion) => ({
+                        id: c.id.startsWith('new-') ? uuidv4() : c.id,
+                        name: c.name,
+                        maxScore: c.maxScore || 100,
+                    }));
+                }
 
                 const updatedCompetition = await CompetitionModel.findByIdAndUpdate(
                     id,
-                    { name, criteria: criteriaWithIds },
+                    updateData,
                     { new: true, runValidators: true }
                 );
 
