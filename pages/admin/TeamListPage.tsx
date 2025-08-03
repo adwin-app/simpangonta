@@ -45,7 +45,7 @@ const TeamCard: React.FC<{
             <ol className="list-decimal list-inside space-y-2 text-gray-700 bg-gray-50 p-3 rounded-md">
                 {team.members.map((member, index) => (
                     <li key={index}>
-                        <div className="font-medium">{member.name}</div>
+                        <span className="font-medium">{member.name}</span>
                         {member.participatedCompetitions && member.participatedCompetitions.length > 0 && (
                             <div className="text-xs text-gray-500 pl-4">
                                 Ikut: {member.participatedCompetitions.map(id => competitionMap.get(id) || `Lomba (ID: ${id})`).join(', ')}
