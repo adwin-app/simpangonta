@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../../services/api';
 import { LeaderboardEntry, Competition } from '../../types';
 import { Card } from '../../components/UI';
-import { AppColors, PrinterIcon } from '../../constants';
+import { AppColors, PrinterIcon, UsersIcon } from '../../constants';
 import { Button } from '../../components/UI';
 
 const MedalIcon: React.FC<{ rank: number }> = ({ rank }) => {
@@ -16,6 +16,8 @@ const LeaderboardTable: React.FC<{ leaderboard: LeaderboardEntry[], competitions
     if (leaderboard.length === 0) {
         return <p className="text-center py-8 text-gray-500">Belum ada data nilai yang masuk untuk kategori ini.</p>;
     }
+
+    const competitionMap = new Map(competitions.map(c => [c.id, c]));
 
     return (
         <table className="min-w-full divide-y divide-gray-200">
@@ -50,7 +52,10 @@ const LeaderboardTable: React.FC<{ leaderboard: LeaderboardEntry[], competitions
                         <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-800">{entry.medals.bronze}</td>
                         {competitions.map(c => (
                             <td key={c.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
-                                {entry.scoresByCompetition[c.id] || '-'}
+                                {c.isIndividual ? 
+                                    <span className="inline-flex items-center text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800"><UsersIcon className="w-3 h-3 mr-1"/>Individu</span> : 
+                                    (entry.scoresByCompetition[c.id] || '-')
+                                }
                             </td>
                         ))}
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold" style={{color: AppColors.primary}}>

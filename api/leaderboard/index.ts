@@ -38,7 +38,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const teamStats: { [teamId: string]: {
             gold: number; silver: number; bronze: number;
             tapakKemahScore: number;
-            scoresByCompetition: { [competitionId: string]: number };
+            scoresByCompetition: { [competitionId: string]: number | string };
             totalScore: number;
         } } = {};
 
@@ -48,41 +48,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         competitions.forEach(competition => {
             const competitionId = competition._id.toString();
-            
-            // Get latest scores for this competition
             const scoresForCompetition = scores.filter(s => s.competitionId === competitionId);
             
-            const teamScoresForCompetition = filteredTeams.map(team => {
-                const teamScores = scoresForCompetition.filter(s => s.teamId === team.id);
-                // Calculate the average score from all judges for this team and competition.
-                const finalScore = teamScores.length > 0
-                    ? teamScores.reduce((acc, s) => acc + s.totalScore, 0) / teamScores.length
-                    : 0;
+            if (competition.isIndividual) {
+                // Individual competition logic
+                const individualScores = scoresForCompetition.sort((a, b) => b.totalScore - a.totalScore);
                 
-                if (teamStats[team.id]) {
-                    teamStats[team.id].scoresByCompetition[competitionId] = finalScore;
-                    if (competitionId === tapakKemahId) {
-                        teamStats[team.id].tapakKemahScore = finalScore;
-                    }
-                }
-                return { teamId: team.id, score: finalScore };
-            }).sort((a, b) => b.score - a.score);
+                if (individualScores.length >= 1 && individualScores[0].totalScore > 0) teamStats[individualScores[0].teamId].gold += 1;
+                if (individualScores.length >= 2 && individualScores[1].totalScore > 0) teamStats[individualScores[1].teamId].silver += 1;
+                if (individualScores.length >= 3 && individualScores[2].totalScore > 0) teamStats[individualScores[2].teamId].bronze += 1;
 
-            // Award medals
-            if (competitionId === tapakKemahId) {
-                if (teamScoresForCompetition.length >= 1 && teamScoresForCompetition[0].score > 0) teamStats[teamScoresForCompetition[0].teamId].gold += 3;
-                if (teamScoresForCompetition.length >= 2 && teamScoresForCompetition[1].score > 0) teamStats[teamScoresForCompetition[1].teamId].gold += 2;
-                if (teamScoresForCompetition.length >= 3 && teamScoresForCompetition[2].score > 0) teamStats[teamScoresForCompetition[2].teamId].gold += 1;
+                // Mark this competition as "Individual" for display, no single score to show.
+                 filteredTeams.forEach(team => {
+                    teamStats[team.id].scoresByCompetition[competitionId] = "Individu";
+                });
+
             } else {
-                if (teamScoresForCompetition.length >= 1 && teamScoresForCompetition[0].score > 0) teamStats[teamScoresForCompetition[0].teamId].gold += 1;
-                if (teamScoresForCompetition.length >= 2 && teamScoresForCompetition[1].score > 0) teamStats[teamScoresForCompetition[1].teamId].silver += 1;
-                if (teamScoresForCompetition.length >= 3 && teamScoresForCompetition[2].score > 0) teamStats[teamScoresForCompetition[2].teamId].bronze += 1;
+                 // Team-based competition logic
+                const teamScoresForCompetition = filteredTeams.map(team => {
+                    const teamScores = scoresForCompetition.filter(s => s.teamId === team.id);
+                    const finalScore = teamScores.length > 0
+                        ? teamScores.reduce((acc, s) => acc + s.totalScore, 0) / teamScores.length
+                        : 0;
+                    
+                    if (teamStats[team.id]) {
+                        teamStats[team.id].scoresByCompetition[competitionId] = parseFloat(finalScore.toFixed(2));
+                        if (competitionId === tapakKemahId) {
+                            teamStats[team.id].tapakKemahScore = finalScore;
+                        }
+                    }
+                    return { teamId: team.id, score: finalScore };
+                }).sort((a, b) => b.score - a.score);
+
+                // Award medals for team competitions
+                const isTapakKemah = competitionId === tapakKemahId;
+                if (isTapakKemah) {
+                    if (teamScoresForCompetition.length >= 1 && teamScoresForCompetition[0].score > 0) teamStats[teamScoresForCompetition[0].teamId].gold += 3;
+                    if (teamScoresForCompetition.length >= 2 && teamScoresForCompetition[1].score > 0) teamStats[teamScoresForCompetition[1].teamId].gold += 2;
+                    if (teamScoresForCompetition.length >= 3 && teamScoresForCompetition[2].score > 0) teamStats[teamScoresForCompetition[2].teamId].gold += 1;
+                } else {
+                    if (teamScoresForCompetition.length >= 1 && teamScoresForCompetition[0].score > 0) teamStats[teamScoresForCompetition[0].teamId].gold += 1;
+                    if (teamScoresForCompetition.length >= 2 && teamScoresForCompetition[1].score > 0) teamStats[teamScoresForCompetition[1].teamId].silver += 1;
+                    if (teamScoresForCompetition.length >= 3 && teamScoresForCompetition[2].score > 0) teamStats[teamScoresForCompetition[2].teamId].bronze += 1;
+                }
             }
         });
 
         filteredTeams.forEach(team => {
             if (teamStats[team.id]) {
-                teamStats[team.id].totalScore = Object.values(teamStats[team.id].scoresByCompetition).reduce((acc, curr) => acc + curr, 0);
+                 const numericScores = Object.values(teamStats[team.id].scoresByCompetition).filter(v => typeof v === 'number') as number[];
+                teamStats[team.id].totalScore = numericScores.reduce((acc, curr) => acc + curr, 0);
             }
         });
         
@@ -101,21 +116,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }));
         
         teamListForRanking.sort((a, b) => {
-            // Standard medal count sorting: Gold > Silver > Bronze
             if (a.medals.gold !== b.medals.gold) return b.medals.gold - a.medals.gold;
             if (a.medals.silver !== b.medals.silver) return b.medals.silver - a.medals.silver;
             if (a.medals.bronze !== b.medals.bronze) return b.medals.bronze - a.medals.bronze;
-            // Specific tie-breaker from competition rules
             if (a.tapakKemahScore !== b.tapakKemahScore) return b.tapakKemahScore - a.tapakKemahScore;
-            // Final tie-breaker: total score across all competitions
             if (a.totalScore !== b.totalScore) return b.totalScore - a.totalScore;
-            return 0; // Teams are tied
+            return 0;
         });
         
-        const finalLeaderboard = teamListForRanking.map((entry, index) => ({
-            ...entry,
-            rank: index + 1,
-        }));
+        const finalLeaderboard: LeaderboardEntry[] = teamListForRanking.map((entry, index, arr) => {
+            let rank = index + 1;
+            if (index > 0) {
+                const prev = arr[index - 1];
+                // Check if current entry is tied with the previous one
+                const isTied = prev.medals.gold === entry.medals.gold &&
+                               prev.medals.silver === entry.medals.silver &&
+                               prev.medals.bronze === entry.medals.bronze &&
+                               prev.tapakKemahScore === entry.tapakKemahScore &&
+                               prev.totalScore === entry.totalScore;
+                if (isTied) {
+                    // find rank of previous entry in final array
+                    const prevFinal = finalLeaderboard[index -1];
+                    rank = prevFinal.rank;
+                }
+            }
+            return {
+                ...entry,
+                rank,
+            };
+        });
 
         res.status(200).json(finalLeaderboard);
     } catch (error) {

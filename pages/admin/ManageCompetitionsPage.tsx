@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { apiService } from '../../services/api';
 import { Competition, Criterion } from '../../types';
 import { Card, Button, Input } from '../../components/UI';
-import { PlusCircleIcon, TrophyIcon, CloseIcon, PencilIcon, TrashIcon } from '../../constants';
+import { PlusCircleIcon, TrophyIcon, CloseIcon, PencilIcon, TrashIcon, UsersIcon } from '../../constants';
 
 const TAPAK_KEMAH_NAME = 'Tapak Kemah';
 
@@ -13,6 +13,7 @@ const EditCompetitionModal: React.FC<{
 }> = ({ competition, onClose, onSave }) => {
     const [name, setName] = useState(competition.name);
     const [criteria, setCriteria] = useState<Criterion[]>(competition.criteria);
+    const [isIndividual, setIsIndividual] = useState(competition.isIndividual || false);
     const [isSaving, setIsSaving] = useState(false);
     const isTapakKemah = competition.name.toLowerCase() === TAPAK_KEMAH_NAME.toLowerCase();
 
@@ -55,7 +56,7 @@ const EditCompetitionModal: React.FC<{
 
         setIsSaving(true);
         try {
-            await apiService.updateCompetition(competition.id, { name: name.trim(), criteria: finalCriteria });
+            await apiService.updateCompetition(competition.id, { name: name.trim(), criteria: finalCriteria, isIndividual });
             onSave();
         } catch (error: any) {
             console.error("Failed to update competition", error);
@@ -79,6 +80,18 @@ const EditCompetitionModal: React.FC<{
                         <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lomba</label>
                         <Input value={name} onChange={e => setName(e.target.value)} required disabled={isTapakKemah} />
                         {isTapakKemah && <p className="text-xs text-gray-500 mt-1">Nama lomba "Tapak Kemah" tidak dapat diubah karena memiliki logika penilaian khusus.</p>}
+                    </div>
+                     <div className="flex items-center">
+                        <input
+                            type="checkbox"
+                            id="edit-isIndividual"
+                            checked={isIndividual}
+                            onChange={(e) => setIsIndividual(e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <label htmlFor="edit-isIndividual" className="ml-2 block text-sm text-gray-900">
+                            Lomba Individu
+                        </label>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Kriteria Penilaian</label>
@@ -124,6 +137,7 @@ export const ManageCompetitionsPage: React.FC = () => {
     const [competitions, setCompetitions] = useState<Competition[]>([]);
     const [loading, setLoading] = useState(true);
     const [newCompetitionName, setNewCompetitionName] = useState('');
+    const [isIndividual, setIsIndividual] = useState(false);
     const [newCriteria, setNewCriteria] = useState<{name: string, maxScore: string}[]>([{ name: '', maxScore: '100' }]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingCompetition, setEditingCompetition] = useState<Competition | null>(null);
@@ -165,9 +179,10 @@ export const ManageCompetitionsPage: React.FC = () => {
         if (newCompetitionName.trim() && finalCriteria.length > 0) {
             setIsSubmitting(true);
             try {
-                await apiService.addCompetition(newCompetitionName.trim(), finalCriteria);
+                await apiService.addCompetition(newCompetitionName.trim(), finalCriteria, isIndividual);
                 setNewCompetitionName('');
                 setNewCriteria([{ name: '', maxScore: '100' }]);
+                setIsIndividual(false);
                 fetchCompetitions();
             } catch (error: any) {
                 console.error("Failed to add competition:", error);
@@ -218,16 +233,30 @@ export const ManageCompetitionsPage: React.FC = () => {
             <Card>
                 <h2 className="text-xl font-semibold mb-4">Tambah Lomba Baru</h2>
                 <form onSubmit={handleAddCompetition} className="space-y-4">
-                    <div>
-                         <label htmlFor="competitionName" className="block text-sm font-medium text-gray-700 mb-1">Nama Lomba</label>
-                         <Input
-                            id="competitionName"
-                            type="text"
-                            value={newCompetitionName}
-                            onChange={(e) => setNewCompetitionName(e.target.value)}
-                            placeholder="e.g., Cerdas Cermat"
-                            required
-                        />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="md:col-span-2">
+                             <label htmlFor="competitionName" className="block text-sm font-medium text-gray-700 mb-1">Nama Lomba</label>
+                             <Input
+                                id="competitionName"
+                                type="text"
+                                value={newCompetitionName}
+                                onChange={(e) => setNewCompetitionName(e.target.value)}
+                                placeholder="e.g., Cerdas Cermat"
+                                required
+                            />
+                        </div>
+                        <div className="md:col-span-2 flex items-center">
+                             <input
+                                type="checkbox"
+                                id="isIndividual"
+                                checked={isIndividual}
+                                onChange={(e) => setIsIndividual(e.target.checked)}
+                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <label htmlFor="isIndividual" className="ml-2 block text-sm text-gray-900">
+                                Lomba Individu (setiap anggota dinilai terpisah)
+                            </label>
+                        </div>
                     </div>
                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Kriteria Penilaian</label>
@@ -281,12 +310,18 @@ export const ManageCompetitionsPage: React.FC = () => {
                                 <li key={comp.id} className="p-4 bg-gray-50 rounded-lg">
                                     <div className="flex justify-between items-start gap-4">
                                         <div className="flex-grow">
-                                            <div className="flex items-center">
-                                                <TrophyIcon className="w-6 h-6 mr-3 text-yellow-500" />
+                                            <div className="flex items-center flex-wrap gap-x-3 gap-y-1">
+                                                <TrophyIcon className="w-6 h-6 text-yellow-500" />
                                                 <span className="text-gray-800 font-bold text-lg">{comp.name}</span>
                                                 {comp.isPublished && (
-                                                    <span className="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                         LIVE
+                                                    </span>
+                                                )}
+                                                {comp.isIndividual && (
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                        <UsersIcon className="w-3 h-3 mr-1" />
+                                                        Individu
                                                     </span>
                                                 )}
                                             </div>

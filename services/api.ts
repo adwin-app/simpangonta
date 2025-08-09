@@ -21,11 +21,11 @@ const getCompetitions = async (): Promise<Competition[]> => {
     return handleResponse(response);
 };
 
-const addCompetition = async (name: string, criteria: {name: string}[]): Promise<Competition> => {
+const addCompetition = async (name: string, criteria: {name: string}[], isIndividual: boolean): Promise<Competition> => {
     const response = await fetch('/api/competitions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, criteria }),
+        body: JSON.stringify({ name, criteria, isIndividual }),
     });
     return handleResponse(response);
 };

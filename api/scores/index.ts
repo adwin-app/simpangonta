@@ -12,6 +12,7 @@ const toScoreDTO = (score: any): Score => ({
     scoresByCriterion: score.scoresByCriterion,
     totalScore: score.totalScore,
     notes: score.notes,
+    memberName: score.memberName,
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -35,12 +36,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             break;
         case 'POST':
             try {
-                const { teamId, competitionId, judgeId, scoresByCriterion, totalScore, notes } = req.body;
+                const { teamId, competitionId, judgeId, scoresByCriterion, totalScore, notes, memberName } = req.body;
                 if (!teamId || !competitionId || !judgeId || !scoresByCriterion) {
                     return res.status(400).json({ error: 'Missing required fields for score submission.' });
                 }
 
-                const filter = { teamId, competitionId, judgeId };
+                const filter: any = { teamId, competitionId, judgeId };
+                // If memberName is provided, it's an individual score. Add it to the filter.
+                // null or undefined memberName means it's a team score.
+                filter.memberName = memberName || null;
+                
                 const update = { scoresByCriterion, totalScore, notes };
                 const options = { upsert: true, new: true, setDefaultsOnInsert: true };
 

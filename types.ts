@@ -1,5 +1,6 @@
 
 
+
 export enum UserRole {
   ADMIN = 'ADMIN',
   JURI = 'JURI',
@@ -33,6 +34,7 @@ export interface Competition {
   name: string;
   criteria: Criterion[];
   isPublished: boolean;
+  isIndividual?: boolean;
 }
 
 export interface TeamMember {
@@ -60,6 +62,7 @@ export interface Score {
   scoresByCriterion: { [criterionId: string]: number };
   totalScore: number;
   notes?: string;
+  memberName?: string;
 }
 
 export interface LeaderboardEntry {
@@ -67,7 +70,7 @@ export interface LeaderboardEntry {
   teamId:string;
   teamName: string;
   school: string;
-  scoresByCompetition: { [competitionId: string]: number };
+  scoresByCompetition: { [competitionId: string]: number | string };
   totalScore: number; // Tetap ada untuk referensi, tapi tidak dipakai untuk ranking
   medals: {
       gold: number;
