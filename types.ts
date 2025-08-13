@@ -1,6 +1,7 @@
 
 
 
+
 export enum UserRole {
   ADMIN = 'ADMIN',
   JURI = 'JURI',
@@ -52,6 +53,11 @@ export interface Team {
   coachPhone: string;
   members: TeamMember[];
   campNumber?: string;
+  manualMedals?: {
+      gold: number;
+      silver: number;
+      bronze: number;
+  };
 }
 
 export interface Score {
@@ -77,6 +83,7 @@ export interface LeaderboardEntry {
       silver: number;
       bronze: number;
   };
+  isManual?: boolean;
 }
 
 export interface DashboardStats {

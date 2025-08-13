@@ -17,6 +17,15 @@ const TeamSchema = new Schema<ITeamDocument>({
   coachPhone: { type: String, required: true },
   members: { type: [TeamMemberSchema], required: true },
   campNumber: { type: String, required: false, unique: true, sparse: true },
+  manualMedals: {
+    type: {
+      gold: { type: Number, default: 0 },
+      silver: { type: Number, default: 0 },
+      bronze: { type: Number, default: 0 },
+    },
+    required: false,
+    _id: false,
+  },
 });
 
 TeamSchema.index({ school: 1, type: 1, teamName: 1 }, { unique: true });

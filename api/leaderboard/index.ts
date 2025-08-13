@@ -1,4 +1,5 @@
 
+
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import connectMongo from '../../lib/mongodb';
 import CompetitionModel from '../../models/Competition';
@@ -138,19 +139,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
         });
         
-        const teamListForRanking = filteredTeams.map(team => ({
-            teamId: team.id,
-            teamName: team.teamName,
-            school: team.school,
-            scoresByCompetition: teamStats[team.id]?.scoresByCompetition || {},
-            totalScore: teamStats[team.id]?.totalScore || 0,
-            medals: {
+        const teamListForRanking = filteredTeams.map(team => {
+            const calculatedMedals = {
                 gold: teamStats[team.id]?.gold || 0,
                 silver: teamStats[team.id]?.silver || 0,
                 bronze: teamStats[team.id]?.bronze || 0,
-            },
-            tapakKemahScore: teamStats[team.id]?.tapakKemahScore || 0,
-        }));
+            };
+
+            const finalMedals = team.manualMedals ? {
+                gold: team.manualMedals.gold,
+                silver: team.manualMedals.silver,
+                bronze: team.manualMedals.bronze,
+            } : calculatedMedals;
+
+            return {
+                teamId: team.id,
+                teamName: team.teamName,
+                school: team.school,
+                scoresByCompetition: teamStats[team.id]?.scoresByCompetition || {},
+                totalScore: teamStats[team.id]?.totalScore || 0,
+                medals: finalMedals,
+                tapakKemahScore: teamStats[team.id]?.tapakKemahScore || 0,
+                isManual: !!team.manualMedals,
+            };
+        });
         
         teamListForRanking.sort((a, b) => {
             if (a.medals.gold !== b.medals.gold) return b.medals.gold - a.medals.gold;
@@ -177,8 +189,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 }
             }
             acc.push({
-                ...entry,
                 rank,
+                teamId: entry.teamId,
+                teamName: entry.teamName,
+                school: entry.school,
+                scoresByCompetition: entry.scoresByCompetition,
+                totalScore: entry.totalScore,
+                medals: entry.medals,
+                isManual: entry.isManual,
             });
             return acc;
         }, [] as LeaderboardEntry[]);

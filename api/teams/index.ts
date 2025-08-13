@@ -24,6 +24,7 @@ const toTeamDTO = (team: any): Team => ({
         };
     }),
     campNumber: team.campNumber,
+    manualMedals: team.manualMedals
 });
 
 
@@ -83,7 +84,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     return res.status(400).json({ error: 'Team ID is required.' });
                 }
                 
-                // If campNumber is empty string, convert it to null so it's not indexed by sparse unique index
                 if (teamData.campNumber === '') {
                     teamData.campNumber = null;
                 }
@@ -98,7 +98,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         });
                 }
                 
-                const updatedTeam = await TeamModel.findByIdAndUpdate(id, teamData, { new: true });
+                let finalUpdate;
+                if (teamData.manualMedals === null) {
+                    // This is the signal to remove/unset the manual medals override
+                    const { manualMedals, ...otherData } = teamData;
+                    finalUpdate = { $set: otherData, $unset: { manualMedals: 1 } };
+                } else {
+                    finalUpdate = { $set: teamData };
+                }
+                
+                const updatedTeam = await TeamModel.findByIdAndUpdate(id, finalUpdate, { new: true });
                 
                 if (!updatedTeam) {
                     return res.status(404).json({ error: 'Team not found.' });

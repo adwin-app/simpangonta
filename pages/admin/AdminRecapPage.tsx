@@ -1,10 +1,12 @@
 
 
+
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../../services/api';
 import { LeaderboardEntry, Competition, Score, Team } from '../../types';
-import { Card } from '../../components/UI';
-import { AppColors, PrinterIcon, UsersIcon } from '../../constants';
+import { Card, Input } from '../../components/UI';
+import { AppColors, PrinterIcon, UsersIcon, PencilIcon, CloseIcon } from '../../constants';
 import { Button } from '../../components/UI';
 
 type IndividualWinnerRecap = {
@@ -20,7 +22,96 @@ const MedalIcon: React.FC<{ rank: number }> = ({ rank }) => {
     return null;
 };
 
-const LeaderboardTable: React.FC<{ leaderboard: LeaderboardEntry[], competitions: Competition[] }> = ({ leaderboard, competitions }) => {
+const EditMedalsModal: React.FC<{
+    team: LeaderboardEntry | null;
+    onClose: () => void;
+    onSave: () => void;
+}> = ({ team, onClose, onSave }) => {
+    if (!team) return null;
+
+    const [medals, setMedals] = useState({
+        gold: team.medals.gold,
+        silver: team.medals.silver,
+        bronze: team.medals.bronze,
+    });
+    const [isSaving, setIsSaving] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleMedalChange = (type: 'gold' | 'silver' | 'bronze', value: string) => {
+        const numValue = parseInt(value, 10);
+        setMedals(prev => ({ ...prev, [type]: isNaN(numValue) ? 0 : numValue }));
+    };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        setError('');
+        try {
+            await apiService.updateTeam(team.teamId, { manualMedals: medals });
+            onSave();
+        } catch (err: any) {
+            setError(err.message || 'Gagal menyimpan medali.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+    
+    const handleReset = async () => {
+        setIsSaving(true);
+        setError('');
+        try {
+            await apiService.updateTeam(team.teamId, { manualMedals: null });
+            onSave();
+        } catch (err: any) {
+            setError(err.message || 'Gagal mereset medali.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4">
+            <Card className="w-full max-w-md">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-bold">Edit Medali Manual</h2>
+                    <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-200"><CloseIcon className="w-6 h-6" /></button>
+                </div>
+                <div className="mb-4">
+                    <p className="font-semibold text-lg">{team.teamName}</p>
+                    <p className="text-sm text-gray-500">{team.school}</p>
+                </div>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">🥇 Emas</label>
+                        <Input type="number" value={medals.gold} onChange={e => handleMedalChange('gold', e.target.value)} min="0" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">🥈 Perak</label>
+                        <Input type="number" value={medals.silver} onChange={e => handleMedalChange('silver', e.target.value)} min="0" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">🥉 Perunggu</label>
+                        <Input type="number" value={medals.bronze} onChange={e => handleMedalChange('bronze', e.target.value)} min="0" />
+                    </div>
+                </div>
+                {error && <p className="text-red-500 text-sm mt-4 text-center">{error}</p>}
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-6">
+                     <Button onClick={handleReset} variant="secondary" className="w-full sm:w-auto !bg-yellow-500 hover:!bg-yellow-600 text-white" disabled={isSaving}>
+                        Reset ke Otomatis
+                    </Button>
+                    <div className="flex gap-3">
+                        <Button variant="secondary" onClick={onClose} disabled={isSaving}>Batal</Button>
+                        <Button onClick={handleSave} disabled={isSaving}>
+                            {isSaving ? 'Menyimpan...' : 'Simpan'}
+                        </Button>
+                    </div>
+                </div>
+            </Card>
+        </div>
+    );
+};
+
+
+const LeaderboardTable: React.FC<{ leaderboard: LeaderboardEntry[], competitions: Competition[], onEditMedals: (team: LeaderboardEntry) => void; }> = ({ leaderboard, competitions, onEditMedals }) => {
     if (leaderboard.length === 0) {
         return <p className="text-center py-8 text-gray-500">Belum ada data nilai yang masuk untuk kategori ini.</p>;
     }
@@ -38,6 +129,7 @@ const LeaderboardTable: React.FC<{ leaderboard: LeaderboardEntry[], competitions
                         <th key={c.id} scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider truncate" style={{maxWidth: '150px'}}>{c.name}</th>
                     ))}
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Nilai</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider no-print">Aksi</th>
                 </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -53,9 +145,18 @@ const LeaderboardTable: React.FC<{ leaderboard: LeaderboardEntry[], competitions
                             <div className="text-sm font-medium text-gray-900">{entry.teamName}</div>
                             <div className="text-sm text-gray-500">{entry.school}</div>
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-800">{entry.medals.gold}</td>
-                        <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-800">{entry.medals.silver}</td>
-                        <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-800">{entry.medals.bronze}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-800">
+                            {entry.medals.gold}
+                            {entry.isManual && <span className="text-blue-500" title="Diedit manual">*</span>}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-800">
+                             {entry.medals.silver}
+                             {entry.isManual && <span className="text-blue-500" title="Diedit manual">*</span>}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-800">
+                            {entry.medals.bronze}
+                            {entry.isManual && <span className="text-blue-500" title="Diedit manual">*</span>}
+                        </td>
                         {competitions.map(c => {
                             const scoreValue = entry.scoresByCompetition[c.id];
                             return (
@@ -77,6 +178,11 @@ const LeaderboardTable: React.FC<{ leaderboard: LeaderboardEntry[], competitions
                         })}
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold" style={{color: AppColors.primary}}>
                             {entry.totalScore}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium no-print">
+                            <Button variant="secondary" onClick={() => onEditMedals(entry)} className="py-1 px-2 text-xs flex items-center">
+                                <PencilIcon className="w-4 h-4 mr-1"/> Edit Medali
+                            </Button>
                         </td>
                     </tr>
                 ))}
@@ -192,6 +298,7 @@ export const AdminRecapPage: React.FC = () => {
     const [isResetting, setIsResetting] = useState(false);
     const [isResetModalOpen, setIsResetModalOpen] = useState(false);
     const [individualWinners, setIndividualWinners] = useState<IndividualWinnerRecap[]>([]);
+    const [editingMedalsTeam, setEditingMedalsTeam] = useState<LeaderboardEntry | null>(null);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -265,6 +372,11 @@ export const AdminRecapPage: React.FC = () => {
         window.print();
     };
 
+    const handleSaveMedals = () => {
+        setEditingMedalsTeam(null);
+        loadData();
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center no-print">
@@ -287,14 +399,14 @@ export const AdminRecapPage: React.FC = () => {
                     <section>
                         <h2 className="text-2xl font-bold mb-4">Rekap Juara Umum Putra</h2>
                         <Card className="overflow-x-auto">
-                            <LeaderboardTable leaderboard={putraLeaderboard} competitions={competitions} />
+                            <LeaderboardTable leaderboard={putraLeaderboard} competitions={competitions} onEditMedals={setEditingMedalsTeam} />
                         </Card>
                     </section>
 
                     <section className="mt-8 print:break-before-page">
                         <h2 className="text-2xl font-bold mb-4">Rekap Juara Umum Putri</h2>
                         <Card className="overflow-x-auto">
-                            <LeaderboardTable leaderboard={putriLeaderboard} competitions={competitions} />
+                            <LeaderboardTable leaderboard={putriLeaderboard} competitions={competitions} onEditMedals={setEditingMedalsTeam} />
                         </Card>
                     </section>
 
@@ -312,6 +424,11 @@ export const AdminRecapPage: React.FC = () => {
                 onClose={() => setIsResetModalOpen(false)}
                 onReset={handleReset}
                 isResetting={isResetting}
+            />
+            <EditMedalsModal
+                team={editingMedalsTeam}
+                onClose={() => setEditingMedalsTeam(null)}
+                onSave={handleSaveMedals}
             />
         </div>
     );
