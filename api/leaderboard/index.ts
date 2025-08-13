@@ -26,7 +26,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json([]);
         }
 
-        const scores = await ScoreModel.find({ teamId: { $in: teams.map(t => t._id.toString()) } }).lean();
+        const teamIds = teams.map(t => t._id.toString());
+        const scores = await ScoreModel.find({ teamId: { $in: teamIds } }).lean();
         
         const filteredTeams = teams.map(t => ({...t, id: t._id.toString()}));
         
@@ -52,15 +53,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             
             if (competition.isIndividual) {
                 // Individual competition logic
-                const individualScores = scoresForCompetition.sort((a, b) => b.totalScore - a.totalScore);
+                const individualScores = scoresForCompetition.filter(s => s.teamId).sort((a, b) => b.totalScore - a.totalScore);
                 
-                if (individualScores.length >= 1 && individualScores[0].totalScore > 0) teamStats[individualScores[0].teamId].gold += 1;
-                if (individualScores.length >= 2 && individualScores[1].totalScore > 0) teamStats[individualScores[1].teamId].silver += 1;
-                if (individualScores.length >= 3 && individualScores[2].totalScore > 0) teamStats[individualScores[2].teamId].bronze += 1;
+                if (individualScores.length >= 1 && individualScores[0].totalScore > 0 && teamStats[individualScores[0].teamId]) {
+                    teamStats[individualScores[0].teamId].gold += 1;
+                }
+                if (individualScores.length >= 2 && individualScores[1].totalScore > 0 && teamStats[individualScores[1].teamId]) {
+                    teamStats[individualScores[1].teamId].silver += 1;
+                }
+                if (individualScores.length >= 3 && individualScores[2].totalScore > 0 && teamStats[individualScores[2].teamId]) {
+                    teamStats[individualScores[2].teamId].bronze += 1;
+                }
 
                 // Mark this competition as "Individual" for display, no single score to show.
                  filteredTeams.forEach(team => {
-                    teamStats[team.id].scoresByCompetition[competitionId] = "Individu";
+                    if (teamStats[team.id]) {
+                       teamStats[team.id].scoresByCompetition[competitionId] = "Individu";
+                    }
                 });
 
             } else {
@@ -83,13 +92,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 // Award medals for team competitions
                 const isTapakKemah = competitionId === tapakKemahId;
                 if (isTapakKemah) {
-                    if (teamScoresForCompetition.length >= 1 && teamScoresForCompetition[0].score > 0) teamStats[teamScoresForCompetition[0].teamId].gold += 3;
-                    if (teamScoresForCompetition.length >= 2 && teamScoresForCompetition[1].score > 0) teamStats[teamScoresForCompetition[1].teamId].gold += 2;
-                    if (teamScoresForCompetition.length >= 3 && teamScoresForCompetition[2].score > 0) teamStats[teamScoresForCompetition[2].teamId].gold += 1;
+                    if (teamScoresForCompetition.length >= 1 && teamScoresForCompetition[0].score > 0 && teamStats[teamScoresForCompetition[0].teamId]) teamStats[teamScoresForCompetition[0].teamId].gold += 3;
+                    if (teamScoresForCompetition.length >= 2 && teamScoresForCompetition[1].score > 0 && teamStats[teamScoresForCompetition[1].teamId]) teamStats[teamScoresForCompetition[1].teamId].gold += 2;
+                    if (teamScoresForCompetition.length >= 3 && teamScoresForCompetition[2].score > 0 && teamStats[teamScoresForCompetition[2].teamId]) teamStats[teamScoresForCompetition[2].teamId].gold += 1;
                 } else {
-                    if (teamScoresForCompetition.length >= 1 && teamScoresForCompetition[0].score > 0) teamStats[teamScoresForCompetition[0].teamId].gold += 1;
-                    if (teamScoresForCompetition.length >= 2 && teamScoresForCompetition[1].score > 0) teamStats[teamScoresForCompetition[1].teamId].silver += 1;
-                    if (teamScoresForCompetition.length >= 3 && teamScoresForCompetition[2].score > 0) teamStats[teamScoresForCompetition[2].teamId].bronze += 1;
+                    if (teamScoresForCompetition.length >= 1 && teamScoresForCompetition[0].score > 0 && teamStats[teamScoresForCompetition[0].teamId]) teamStats[teamScoresForCompetition[0].teamId].gold += 1;
+                    if (teamScoresForCompetition.length >= 2 && teamScoresForCompetition[1].score > 0 && teamStats[teamScoresForCompetition[1].teamId]) teamStats[teamScoresForCompetition[1].teamId].silver += 1;
+                    if (teamScoresForCompetition.length >= 3 && teamScoresForCompetition[2].score > 0 && teamStats[teamScoresForCompetition[2].teamId]) teamStats[teamScoresForCompetition[2].teamId].bronze += 1;
                 }
             }
         });
