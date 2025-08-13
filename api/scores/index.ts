@@ -1,3 +1,4 @@
+
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import connectMongo from '../../lib/mongodb';
 import ScoreModel from '../../models/Score';
@@ -44,9 +45,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 }
 
                 const filter: any = { teamId, competitionId, judgeId };
-                // If memberName is provided, it's an individual score. Add it to the filter.
-                // null or undefined memberName means it's a team score.
-                filter.memberName = memberName || null;
+                // Handle individual vs team scores. A trimmed, non-empty string is an individual.
+                // Anything else (null, undefined, empty string) is treated as a team score.
+                const cleanMemberName = (memberName && String(memberName).trim()) ? String(memberName).trim() : null;
+                filter.memberName = cleanMemberName;
                 
                 const update = { scoresByCriterion, totalScore, notes };
                 const options = { upsert: true, new: true, setDefaultsOnInsert: true };
@@ -56,10 +58,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 if (score) {
                     res.status(201).json(toScoreDTO(score));
                 } else {
-                    res.status(500).json({ error: 'Failed to save the score.' });
+                    res.status(500).json({ error: 'Gagal menyimpan skor karena alasan yang tidak diketahui.' });
                 }
-            } catch (error) {
-                res.status(500).json({ error: 'Error submitting score' });
+            } catch (error: any) {
+                 if (error.code === 11000) {
+                    // Unique key violation
+                    const { memberName } = req.body;
+                    const target = (memberName && String(memberName).trim()) ? `peserta "${String(memberName).trim()}"` : `regu ini`;
+                    return res.status(409).json({ error: `Gagal menyimpan: Anda telah memasukkan nilai untuk ${target} sebelumnya.` });
+                }
+                console.error('Error submitting score:', error);
+                res.status(500).json({ error: 'Terjadi kesalahan internal saat menyimpan skor. Silakan coba lagi.' });
             }
             break;
         default:
