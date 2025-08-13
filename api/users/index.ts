@@ -1,4 +1,5 @@
 
+
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import connectMongo from '../../lib/mongodb';
 import UserModel from '../../models/User';
@@ -30,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const usersWithCompetitionNames = users.map(user => {
                     const compId = user.assignedCompetitionId;
                     // Explicitly convert compId to string to prevent potential type issues with ObjectId from lean queries
-                    const competitionName = compId ? competitionMap.get(String(compId)) : undefined;
+                    const competitionName = compId ? competitionMap.get(compId.toString()) : undefined;
                     return toUserDTO(user, competitionName);
                 });
                 

@@ -17,11 +17,29 @@ const ScoreSchema = new Schema<IScoreDocument>({
   timestamps: true,
 });
 
+// Define correct unique indexes using partial filters to resolve the saving conflict.
+// This allows a judge to score multiple individuals from the same team in one competition.
 
-// The unique index has been removed. The application's `findOneAndUpdate` logic in the API
-// is sufficient to handle the upsert behavior, preventing duplicate scores for the
-// same team-competition-judge-participant combination. Removing the explicit index
-// resolves conflicts when submitting multiple individual scores from the same team.
+// 1. Unique index for individual scores (where memberName is a string).
+// A judge can only submit one score for a specific participant in a competition.
+ScoreSchema.index(
+    { teamId: 1, competitionId: 1, judgeId: 1, memberName: 1 },
+    {
+        unique: true,
+        partialFilterExpression: { memberName: { $type: "string" } }
+    }
+);
+
+// 2. Unique index for team scores (where memberName is null).
+// A judge can only submit one score for a specific team in a competition.
+ScoreSchema.index(
+    { teamId: 1, competitionId: 1, judgeId: 1 },
+    {
+        unique: true,
+        partialFilterExpression: { memberName: null }
+    }
+);
+
 
 const ScoreModel: Model<IScoreDocument> = (mongoose.models.Score as Model<IScoreDocument>) || mongoose.model<IScoreDocument>('Score', ScoreSchema);
 
