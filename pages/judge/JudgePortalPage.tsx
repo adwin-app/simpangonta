@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import { AuthContext } from '../../App';
 import { apiService } from '../../services/api';
@@ -43,7 +44,7 @@ const TeamScoreRow: React.FC<{
             {criteria.map(crit => (
                 <td key={crit.id} className="px-4 py-4">
                     {isEditing ? (
-                        <Input type="number" min="0" max={crit.maxScore} value={scoreInput.scores[crit.id] || ''} onChange={e => onInputChange(team.id, crit.id, e.target.value)} className="w-24"/>
+                        <Input type="number" min="0" value={scoreInput.scores[crit.id] || ''} onChange={e => onInputChange(team.id, crit.id, e.target.value)} className="w-24"/>
                     ) : (
                         <span className="font-medium text-gray-800">{scoreInput.scores[crit.id] || '-'}</span>
                     )}
@@ -100,7 +101,7 @@ const ParticipantScoreRow: React.FC<{
             {criteria.map(crit => (
                 <td key={crit.id} className="px-4 py-4">
                     {isEditing ? (
-                        <Input type="number" min="0" max={crit.maxScore} value={scoreInput.scores[crit.id] || ''} onChange={e => onInputChange(participantKey, crit.id, e.target.value)} className="w-24"/>
+                        <Input type="number" min="0" value={scoreInput.scores[crit.id] || ''} onChange={e => onInputChange(participantKey, crit.id, e.target.value)} className="w-24"/>
                     ) : (
                         <span className="font-medium text-gray-800">{scoreInput.scores[crit.id] || '-'}</span>
                     )}
@@ -257,9 +258,9 @@ export const JudgePortalPage: React.FC = () => {
         myCompetition.criteria.forEach(crit => {
             const scoreStr = currentInput.scores[crit.id] || '0';
             const scoreNum = Number(scoreStr);
-            if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > crit.maxScore) {
+            if (isNaN(scoreNum) || scoreNum < 0) {
                 allScoresValid = false;
-                 if (!validationError) validationError = `Nilai "${crit.name}" harus antara 0 - ${crit.maxScore}.`;
+                 if (!validationError) validationError = `Nilai "${crit.name}" harus angka positif.`;
             }
             scoresByCriterionNum[crit.id] = isNaN(scoreNum) ? 0 : scoreNum;
         });
@@ -340,7 +341,7 @@ export const JudgePortalPage: React.FC = () => {
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Peserta</th>
-                                    {visibleCriteria.map(crit => (<th key={crit.id} scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">{crit.name}<span className="block font-normal text-gray-400">(Max: {crit.maxScore})</span></th>))}
+                                    {visibleCriteria.map(crit => (<th key={crit.id} scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">{crit.name}</th>))}
                                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Total</th>
                                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Catatan</th>
                                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
@@ -367,7 +368,7 @@ export const JudgePortalPage: React.FC = () => {
                              <thead className="bg-gray-50">
                                 <tr>
                                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Regu</th>
-                                    {visibleCriteria.map(crit => (<th key={crit.id} scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">{crit.name}<span className="block font-normal text-gray-400">(Max: {crit.maxScore})</span></th>))}
+                                    {visibleCriteria.map(crit => (<th key={crit.id} scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">{crit.name}</th>))}
                                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Total</th>
                                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Catatan</th>
                                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
@@ -389,7 +390,7 @@ export const JudgePortalPage: React.FC = () => {
                              <thead className="bg-gray-50">
                                 <tr>
                                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Regu</th>
-                                    {visibleCriteria.map(crit => (<th key={crit.id} scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">{crit.name}<span className="block font-normal text-gray-400">(Max: {crit.maxScore})</span></th>))}
+                                    {visibleCriteria.map(crit => (<th key={crit.id} scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">{crit.name}</th>))}
                                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Total</th>
                                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Catatan</th>
                                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>

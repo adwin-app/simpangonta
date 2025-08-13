@@ -22,13 +22,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case 'GET':
             try {
                 const { competitionId, judgeId } = req.query;
-                if (!competitionId || !judgeId) {
-                    return res.status(400).json({ error: 'competitionId and judgeId are required' });
+                if (!competitionId) {
+                    return res.status(400).json({ error: 'competitionId is required' });
                 }
-                const scores = await ScoreModel.find({
-                    competitionId: competitionId as string,
-                    judgeId: judgeId as string,
-                }).lean();
+                const filter: any = { competitionId: competitionId as string };
+                if (judgeId) {
+                    filter.judgeId = judgeId as string;
+                }
+                
+                const scores = await ScoreModel.find(filter).lean();
                 res.status(200).json(scores.map(toScoreDTO));
             } catch (error) {
                 res.status(500).json({ error: 'Error fetching scores' });

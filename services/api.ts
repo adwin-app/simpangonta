@@ -88,6 +88,11 @@ const getScores = async (competitionId: string, judgeId: string): Promise<Score[
     return handleResponse(response);
 };
 
+const getScoresByCompetition = async (competitionId: string): Promise<Score[]> => {
+    const response = await fetch(`/api/scores?competitionId=${competitionId}`);
+    return handleResponse(response);
+};
+
 const addScore = async (scoreData: Omit<Score, 'id'>): Promise<Score> => {
     const response = await fetch('/api/scores', {
         method: 'POST',
@@ -195,6 +200,7 @@ export const apiService = {
     updateTeam,
     deleteTeam,
     getScores,
+    getScoresByCompetition,
     addScore,
     getLeaderboard,
     getDashboardStats,

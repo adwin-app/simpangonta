@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../../services/api';
-import { LeaderboardEntry, Competition } from '../../types';
+import { LeaderboardEntry, Competition, Score } from '../../types';
 import { Card } from '../../components/UI';
 import { AppColors, PrinterIcon, UsersIcon } from '../../constants';
 import { Button } from '../../components/UI';
@@ -119,6 +119,53 @@ const ResetDataModal: React.FC<{
     );
 };
 
+const IndividualWinners: React.FC<{ winners: (Score & { teamName: string; school: string; })[], competitionName: string }> = ({ winners, competitionName }) => {
+    if (winners.length === 0) {
+        return null;
+    }
+
+    return (
+        <section className="mt-8 print:break-before-page">
+            <h2 className="text-2xl font-bold mb-4">Juara Individu - {competitionName}</h2>
+            <Card>
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Peringkat</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Peserta</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asal Regu</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Skor</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {winners.slice(0, 3).map((winner, index) => (
+                                <tr key={winner.id} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap text-lg font-bold">
+                                        <div className="flex items-center">
+                                            <MedalIcon rank={index + 1} />
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm font-medium text-gray-900">{winner.memberName}</div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm font-medium text-gray-900">{winner.teamName}</div>
+                                        <div className="text-sm text-gray-500">{winner.school}</div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold" style={{color: AppColors.primary}}>
+                                        {winner.totalScore}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
+        </section>
+    );
+};
+
 export const AdminRecapPage: React.FC = () => {
     const [putraLeaderboard, setPutraLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [putriLeaderboard, setPutriLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -126,18 +173,41 @@ export const AdminRecapPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [isResetting, setIsResetting] = useState(false);
     const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+    const [individualWinners, setIndividualWinners] = useState<(Score & { teamName: string; school: string; })[]>([]);
+    const [cerdasCermatComp, setCerdasCermatComp] = useState<Competition | null>(null);
 
     const loadData = useCallback(async () => {
         setLoading(true);
         try {
-            const [putraData, putriData, compsData] = await Promise.all([
+            const [putraData, putriData, compsData, allTeams] = await Promise.all([
                 apiService.getLeaderboard('Putra', true),
                 apiService.getLeaderboard('Putri', true),
-                apiService.getCompetitions()
+                apiService.getCompetitions(),
+                apiService.getTeams()
             ]);
             setPutraLeaderboard(putraData);
             setPutriLeaderboard(putriData);
             setCompetitions(compsData);
+
+            const teamMap = new Map(allTeams.map(t => [t.id, { teamName: t.teamName, school: t.school }]));
+            
+            const foundComp = compsData.find(c => c.name.toLowerCase().includes('cerdas cermat') && c.isIndividual);
+            setCerdasCermatComp(foundComp || null);
+
+            if (foundComp) {
+                const scores = await apiService.getScoresByCompetition(foundComp.id);
+                const winners = scores
+                    .filter(score => score.totalScore > 0 && score.memberName)
+                    .map(score => ({
+                        ...score,
+                        teamName: teamMap.get(score.teamId)?.teamName || 'N/A',
+                        school: teamMap.get(score.teamId)?.school || 'N/A'
+                    }))
+                    .sort((a, b) => b.totalScore - a.totalScore);
+                
+                setIndividualWinners(winners);
+            }
+
         } catch (error) {
             console.error("Failed to load recap data:", error);
             alert("Gagal memuat data rekapitulasi.");
@@ -189,18 +259,20 @@ export const AdminRecapPage: React.FC = () => {
             ) : (
                 <div className="printable-area">
                     <section>
-                        <h2 className="text-2xl font-bold mb-4">Rekap Juara Putra</h2>
+                        <h2 className="text-2xl font-bold mb-4">Rekap Juara Umum Putra</h2>
                         <Card className="overflow-x-auto">
                             <LeaderboardTable leaderboard={putraLeaderboard} competitions={competitions} />
                         </Card>
                     </section>
 
                     <section className="mt-8 print:break-before-page">
-                        <h2 className="text-2xl font-bold mb-4">Rekap Juara Putri</h2>
+                        <h2 className="text-2xl font-bold mb-4">Rekap Juara Umum Putri</h2>
                         <Card className="overflow-x-auto">
                             <LeaderboardTable leaderboard={putriLeaderboard} competitions={competitions} />
                         </Card>
                     </section>
+
+                    <IndividualWinners winners={individualWinners} competitionName={cerdasCermatComp?.name || "Cerdas Cermat"} />
                 </div>
             )}
              <ResetDataModal 
