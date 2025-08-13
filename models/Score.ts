@@ -15,11 +15,29 @@ const ScoreSchema = new Schema<IScoreDocument>({
   timestamps: true,
 });
 
-// For team-based competitions, this unique index is correct.
-// For individual competitions, a judge can score multiple members from the same team.
-// We remove the unique index and handle upserts programmatically.
-// ScoreSchema.index({ teamId: 1, competitionId: 1, judgeId: 1 }, { unique: true });
-ScoreSchema.index({ teamId: 1, competitionId: 1, judgeId: 1, memberName: 1 }, { unique: true, sparse: true });
+// Indeks unik sebelumnya memiliki masalah dengan `sparse:true` dan nilai null,
+// yang menyebabkan pelanggaran batasan unik yang salah.
+// Kami menggantinya dengan dua indeks parsial eksplisit untuk setiap kasus penilaian.
+
+// 1. Indeks untuk skor berbasis tim (di mana memberName adalah null atau tidak ada)
+ScoreSchema.index(
+    { teamId: 1, competitionId: 1, judgeId: 1 }, 
+    { 
+      unique: true, 
+      // Indeks ini hanya berlaku untuk dokumen yang TIDAK memiliki memberName, atau di mana memberName adalah null.
+      partialFilterExpression: { memberName: { $in: [null, undefined] } } 
+    }
+);
+
+// 2. Indeks untuk skor individu (di mana memberName adalah string non-null)
+ScoreSchema.index(
+    { teamId: 1, competitionId: 1, judgeId: 1, memberName: 1 },
+    { 
+      unique: true, 
+      // Indeks ini hanya berlaku untuk dokumen di mana memberName ada dan bukan null.
+      partialFilterExpression: { memberName: { $exists: true, $ne: null } } 
+    }
+);
 
 
 const ScoreModel: Model<IScoreDocument> = (mongoose.models.Score as Model<IScoreDocument>) || mongoose.model<IScoreDocument>('Score', ScoreSchema);

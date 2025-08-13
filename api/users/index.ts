@@ -81,7 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 }
 
                 const updatedUser = await UserModel.findByIdAndUpdate(
-                    id,
+                    id as string,
                     updateData,
                     { new: true }
                 );
@@ -99,7 +99,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const { id } = req.body;
                 if (!id) return res.status(400).json({ error: 'User ID is required' });
 
-                const deletedUser = await UserModel.findByIdAndDelete(id);
+                const deletedUser = await UserModel.findByIdAndDelete(id as string);
 
                 if (!deletedUser) return res.status(404).json({ error: 'User not found' });
                 
