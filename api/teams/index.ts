@@ -2,7 +2,6 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import connectMongo from '../../lib/mongodb';
 import TeamModel from '../../models/Team';
 import ScoreModel from '../../models/Score';
-import CompetitionModel from '../../models/Competition';
 import { Team, TeamMember } from '../../types';
 
 // Helper to convert DB document to a data transfer object (DTO) for the frontend
@@ -50,19 +49,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     delete teamData.campNumber;
                 }
                 if (teamData.members) {
-                    const cerdasCermatComp = await CompetitionModel.findOne({ name: /cerdas cermat/i }).lean();
-                    const cerdasCermatId = cerdasCermatComp?._id.toString();
-                    
                     teamData.members = teamData.members
                         .filter((m: TeamMember) => m && m.name && m.name.trim())
                         .map((m: TeamMember) => {
-                            const participated = m.participatedCompetitions || [];
-                            if (participated.length === 0 && cerdasCermatId) {
-                                participated.push(cerdasCermatId);
-                            }
                             return {
                                 name: m.name.trim(),
-                                participatedCompetitions: participated
+                                participatedCompetitions: m.participatedCompetitions || []
                             };
                         });
                 }
@@ -96,19 +88,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     teamData.campNumber = null;
                 }
                  if (teamData.members) {
-                    const cerdasCermatComp = await CompetitionModel.findOne({ name: /cerdas cermat/i }).lean();
-                    const cerdasCermatId = cerdasCermatComp?._id.toString();
-
                     teamData.members = teamData.members
                         .filter((m: TeamMember) => m && m.name && m.name.trim())
                         .map((m: TeamMember) => {
-                            const participated = m.participatedCompetitions || [];
-                            if (participated.length === 0 && cerdasCermatId) {
-                                participated.push(cerdasCermatId);
-                            }
                             return {
                                 name: m.name.trim(),
-                                participatedCompetitions: participated
+                                participatedCompetitions: m.participatedCompetitions || []
                             };
                         });
                 }

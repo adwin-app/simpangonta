@@ -9,7 +9,7 @@ const toUserDTO = (user: any, competitionName?: string): User => ({
     id: (user._id || user.id).toString(),
     username: user.username,
     role: user.role,
-    assignedCompetitionId: user.assignedCompetitionId,
+    assignedCompetitionId: user.assignedCompetitionId == null ? undefined : String(user.assignedCompetitionId),
     assignedCompetitionName: competitionName || '',
     assignedTeamType: user.assignedTeamType,
     assignedCriteriaIds: user.assignedCriteriaIds || [],
@@ -27,7 +27,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const competitionMap = new Map(competitions.map(c => [c._id.toString(), c.name]));
 
                 const usersWithCompetitionNames = users.map(user => {
-                    const competitionName = user.assignedCompetitionId ? competitionMap.get(user.assignedCompetitionId.toString()) : undefined;
+                    const compId = user.assignedCompetitionId;
+                    const competitionName = compId == null ? undefined : competitionMap.get(String(compId));
                     return toUserDTO(user, competitionName);
                 });
                 
