@@ -1,9 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../../services/api';
-import { LeaderboardEntry, Competition, Score } from '../../types';
+import { LeaderboardEntry, Competition, Score, Team } from '../../types';
 import { Card } from '../../components/UI';
 import { AppColors, PrinterIcon, UsersIcon } from '../../constants';
 import { Button } from '../../components/UI';
+
+type IndividualWinnerRecap = {
+    competitionId: string;
+    competitionName: string;
+    winners: (Score & { teamName: string; school: string; })[];
+};
 
 const MedalIcon: React.FC<{ rank: number }> = ({ rank }) => {
     if (rank === 1) return <span title="Juara 1">🥇</span>;
@@ -16,8 +22,6 @@ const LeaderboardTable: React.FC<{ leaderboard: LeaderboardEntry[], competitions
     if (leaderboard.length === 0) {
         return <p className="text-center py-8 text-gray-500">Belum ada data nilai yang masuk untuk kategori ini.</p>;
     }
-
-    const competitionMap = new Map(competitions.map(c => [c.id, c]));
 
     return (
         <table className="min-w-full divide-y divide-gray-200">
@@ -139,10 +143,11 @@ const IndividualWinners: React.FC<{ winners: (Score & { teamName: string; school
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {winners.slice(0, 3).map((winner, index) => (
+                            {winners.map((winner, index) => (
                                 <tr key={winner.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap text-lg font-bold">
-                                        <div className="flex items-center">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-6 text-center">{index + 1}</span>
                                             <MedalIcon rank={index + 1} />
                                         </div>
                                     </td>
@@ -173,8 +178,7 @@ export const AdminRecapPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [isResetting, setIsResetting] = useState(false);
     const [isResetModalOpen, setIsResetModalOpen] = useState(false);
-    const [individualWinners, setIndividualWinners] = useState<(Score & { teamName: string; school: string; })[]>([]);
-    const [cerdasCermatComp, setCerdasCermatComp] = useState<Competition | null>(null);
+    const [individualWinners, setIndividualWinners] = useState<IndividualWinnerRecap[]>([]);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -189,23 +193,32 @@ export const AdminRecapPage: React.FC = () => {
             setPutriLeaderboard(putriData);
             setCompetitions(compsData);
 
-            const teamMap = new Map(allTeams.map(t => [t.id, { teamName: t.teamName, school: t.school }]));
-            
-            const foundComp = compsData.find(c => c.name.toLowerCase().includes('cerdas cermat') && c.isIndividual);
-            setCerdasCermatComp(foundComp || null);
+            const teamMap = new Map(allTeams.map((t: Team) => [t.id, { teamName: t.teamName, school: t.school }]));
+            const individualCompetitions = compsData.filter(c => c.isIndividual);
 
-            if (foundComp) {
-                const scores = await apiService.getScoresByCompetition(foundComp.id);
-                const winners = scores
-                    .filter(score => score.totalScore > 0 && score.memberName)
-                    .map(score => ({
-                        ...score,
-                        teamName: teamMap.get(score.teamId)?.teamName || 'N/A',
-                        school: teamMap.get(score.teamId)?.school || 'N/A'
-                    }))
-                    .sort((a, b) => b.totalScore - a.totalScore);
-                
-                setIndividualWinners(winners);
+            if (individualCompetitions.length > 0) {
+                const winnersByCompetition = await Promise.all(
+                    individualCompetitions.map(async (comp) => {
+                        const scores = await apiService.getScoresByCompetition(comp.id);
+                        const winners = scores
+                            .filter(score => score.totalScore > 0 && score.memberName)
+                            .map(score => ({
+                                ...score,
+                                teamName: teamMap.get(score.teamId)?.teamName || 'N/A',
+                                school: teamMap.get(score.teamId)?.school || 'N/A'
+                            }))
+                            .sort((a, b) => b.totalScore - a.totalScore);
+
+                        return {
+                            competitionId: comp.id,
+                            competitionName: comp.name,
+                            winners: winners,
+                        };
+                    })
+                );
+                setIndividualWinners(winnersByCompetition.filter(wc => wc.winners.length > 0));
+            } else {
+                setIndividualWinners([]);
             }
 
         } catch (error) {
@@ -272,7 +285,13 @@ export const AdminRecapPage: React.FC = () => {
                         </Card>
                     </section>
 
-                    <IndividualWinners winners={individualWinners} competitionName={cerdasCermatComp?.name || "Cerdas Cermat"} />
+                    {individualWinners.map(recap => (
+                        <IndividualWinners
+                            key={recap.competitionId}
+                            winners={recap.winners}
+                            competitionName={recap.competitionName}
+                        />
+                    ))}
                 </div>
             )}
              <ResetDataModal 

@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const users = await UserModel.find({ role: UserRole.JURI }).lean();
                 const competitions = await CompetitionModel.find({}).lean();
                 
-                const competitionMap = new Map(competitions.map(c => [c._id.toString(), c.name]));
+                const competitionMap = new Map(competitions.map(c => [c._id.toString(), String(c.name)]));
 
                 const usersWithCompetitionNames = users.map(user => {
                     const compId = user.assignedCompetitionId;

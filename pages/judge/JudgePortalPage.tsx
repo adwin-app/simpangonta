@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import { AuthContext } from '../../App';
 import { apiService } from '../../services/api';
@@ -178,7 +176,7 @@ export const JudgePortalPage: React.FC = () => {
                         const teamsToProcess = assignedTeamType === 'Putri' ? putri : assignedTeamType === 'Putra' ? putra : [...putra, ...putri];
                         const allParticipants = teamsToProcess
                             .flatMap(team => team.members.map(member => ({...member, teamId: team.id, teamName: team.teamName, school: team.school})))
-                            .filter(p => !p.participatedCompetitions || p.participatedCompetitions.length === 0 || p.participatedCompetitions.includes(assignedCompetitionId));
+                            .filter(p => p.participatedCompetitions?.includes(assignedCompetitionId));
                         setParticipants(allParticipants);
 
                         const initialScores: ScoreInputState = {};
