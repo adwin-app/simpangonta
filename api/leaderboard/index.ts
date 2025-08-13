@@ -1,8 +1,9 @@
+
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import connectMongo from '../../lib/mongodb';
 import CompetitionModel from '../../models/Competition';
 import TeamModel from '../../models/Team';
-import ScoreModel from '../../models/Score';
+import ScoreModel, { IScoreDocument } from '../../models/Score';
 import { LeaderboardEntry } from '../../types';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -52,29 +53,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const scoresForCompetition = scores.filter(s => s.competitionId === competitionId);
             
             if (competition.isIndividual) {
-                // Individual competition logic
-                const individualScores = scoresForCompetition.filter(s => s.teamId).sort((a, b) => b.totalScore - a.totalScore);
+                const individualScores = scoresForCompetition
+                    .filter(s => s.teamId && s.totalScore > 0) 
+                    .sort((a, b) => b.totalScore - a.totalScore);
                 
-                if (individualScores.length >= 1 && individualScores[0].totalScore > 0 && teamStats[individualScores[0].teamId]) {
-                    teamStats[individualScores[0].teamId].gold += 1;
-                }
-                if (individualScores.length >= 2 && individualScores[1].totalScore > 0 && teamStats[individualScores[1].teamId]) {
-                    teamStats[individualScores[1].teamId].silver += 1;
-                }
-                if (individualScores.length >= 3 && individualScores[2].totalScore > 0 && teamStats[individualScores[2].teamId]) {
-                    teamStats[individualScores[2].teamId].bronze += 1;
-                }
+                const awardIndividualMedal = (rank: number, scoreDoc: IScoreDocument | undefined) => {
+                    if (!scoreDoc) return;
+                    const teamId = scoreDoc.teamId;
+                    if (teamId && teamStats[teamId]) { 
+                        if (rank === 1) teamStats[teamId].gold += 1;
+                        else if (rank === 2) teamStats[teamId].silver += 1;
+                        else if (rank === 3) teamStats[teamId].bronze += 1;
+                    }
+                };
+                awardIndividualMedal(1, individualScores[0]);
+                awardIndividualMedal(2, individualScores[1]);
+                awardIndividualMedal(3, individualScores[2]);
 
-                // Mark this competition as "Individual" for display, no single score to show.
-                 filteredTeams.forEach(team => {
+                filteredTeams.forEach(team => {
                     if (teamStats[team.id]) {
                        teamStats[team.id].scoresByCompetition[competitionId] = "Individu";
                     }
                 });
 
             } else {
-                 // Team-based competition logic
-                const teamScoresForCompetition = filteredTeams.map(team => {
+                 const teamScoresForCompetition = filteredTeams.map(team => {
                     const teamScores = scoresForCompetition.filter(s => s.teamId === team.id);
                     const finalScore = teamScores.length > 0
                         ? teamScores.reduce((acc, s) => acc + s.totalScore, 0) / teamScores.length
@@ -89,17 +92,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     return { teamId: team.id, score: finalScore };
                 }).sort((a, b) => b.score - a.score);
 
-                // Award medals for team competitions
                 const isTapakKemah = competitionId === tapakKemahId;
-                if (isTapakKemah) {
-                    if (teamScoresForCompetition.length >= 1 && teamScoresForCompetition[0].score > 0 && teamStats[teamScoresForCompetition[0].teamId]) teamStats[teamScoresForCompetition[0].teamId].gold += 3;
-                    if (teamScoresForCompetition.length >= 2 && teamScoresForCompetition[1].score > 0 && teamStats[teamScoresForCompetition[1].teamId]) teamStats[teamScoresForCompetition[1].teamId].gold += 2;
-                    if (teamScoresForCompetition.length >= 3 && teamScoresForCompetition[2].score > 0 && teamStats[teamScoresForCompetition[2].teamId]) teamStats[teamScoresForCompetition[2].teamId].gold += 1;
-                } else {
-                    if (teamScoresForCompetition.length >= 1 && teamScoresForCompetition[0].score > 0 && teamStats[teamScoresForCompetition[0].teamId]) teamStats[teamScoresForCompetition[0].teamId].gold += 1;
-                    if (teamScoresForCompetition.length >= 2 && teamScoresForCompetition[1].score > 0 && teamStats[teamScoresForCompetition[1].teamId]) teamStats[teamScoresForCompetition[1].teamId].silver += 1;
-                    if (teamScoresForCompetition.length >= 3 && teamScoresForCompetition[2].score > 0 && teamStats[teamScoresForCompetition[2].teamId]) teamStats[teamScoresForCompetition[2].teamId].bronze += 1;
-                }
+                const awardTeamMedal = (rank: number, scoreEntry: { teamId: string; score: number } | undefined) => {
+                    if (!scoreEntry || scoreEntry.score <= 0) return;
+                    const teamId = scoreEntry.teamId;
+                    if (teamId && teamStats[teamId]) {
+                        if (isTapakKemah) {
+                            if (rank === 1) teamStats[teamId].gold += 3;
+                            else if (rank === 2) teamStats[teamId].gold += 2;
+                            else if (rank === 3) teamStats[teamId].gold += 1;
+                        } else {
+                            if (rank === 1) teamStats[teamId].gold += 1;
+                            else if (rank === 2) teamStats[teamId].silver += 1;
+                            else if (rank === 3) teamStats[teamId].bronze += 1;
+                        }
+                    }
+                };
+                awardTeamMedal(1, teamScoresForCompetition[0]);
+                awardTeamMedal(2, teamScoresForCompetition[1]);
+                awardTeamMedal(3, teamScoresForCompetition[2]);
             }
         });
 
@@ -133,27 +144,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return 0;
         });
         
-        const finalLeaderboard: LeaderboardEntry[] = teamListForRanking.map((entry, index, arr) => {
+        const finalLeaderboard: LeaderboardEntry[] = teamListForRanking.reduce((acc, entry, index) => {
             let rank = index + 1;
             if (index > 0) {
-                const prev = arr[index - 1];
-                // Check if current entry is tied with the previous one
-                const isTied = prev.medals.gold === entry.medals.gold &&
-                               prev.medals.silver === entry.medals.silver &&
-                               prev.medals.bronze === entry.medals.bronze &&
-                               prev.tapakKemahScore === entry.tapakKemahScore &&
-                               prev.totalScore === entry.totalScore;
+                const prevEntryInSortedList = teamListForRanking[index - 1];
+                const isTied = prevEntryInSortedList.medals.gold === entry.medals.gold &&
+                               prevEntryInSortedList.medals.silver === entry.medals.silver &&
+                               prevEntryInSortedList.medals.bronze === entry.medals.bronze &&
+                               prevEntryInSortedList.tapakKemahScore === entry.tapakKemahScore &&
+                               prevEntryInSortedList.totalScore === entry.totalScore;
+                
                 if (isTied) {
-                    // find rank of previous entry in final array
-                    const prevFinal = finalLeaderboard[index -1];
-                    rank = prevFinal.rank;
+                    // If tied, use the rank of the previous entry that was already added to our final list
+                    rank = acc[index - 1].rank;
                 }
             }
-            return {
+            acc.push({
                 ...entry,
                 rank,
-            };
-        });
+            });
+            return acc;
+        }, [] as LeaderboardEntry[]);
 
         res.status(200).json(finalLeaderboard);
     } catch (error) {
