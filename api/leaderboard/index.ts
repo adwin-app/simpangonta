@@ -56,7 +56,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const individualScores = scoresForCompetition
                     .filter(s => s.teamId && s.totalScore > 0) 
                     .sort((a, b) => b.totalScore - a.totalScore);
-                
+
+                // This part correctly awards medals to the team of the winning individual
                 const awardIndividualMedal = (rank: number, scoreDoc: IScoreDocument | undefined) => {
                     if (!scoreDoc) return;
                     const teamId = scoreDoc.teamId;
@@ -70,20 +71,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 awardIndividualMedal(2, individualScores[1]);
                 awardIndividualMedal(3, individualScores[2]);
 
-                filteredTeams.forEach(team => {
-                    if (teamStats[team.id]) {
-                       const teamMemberScores = individualScores
-                            .filter(s => s.teamId === team.id && s.memberName)
-                            .map(s => ({ name: s.memberName, score: s.totalScore }))
-                            .slice(0, 3); // Ambil 3 teratas dari tim ini
+                // NEW LOGIC: Instead of names, mark the rank (1, 2, 3) for the winning teams
+                // Initialize all teams with a default value for this competition
+                 filteredTeams.forEach(team => {
+                    teamStats[team.id].scoresByCompetition[competitionId] = "-";
+                });
 
-                        if (teamMemberScores.length > 0) {
-                            const topPerformersString = teamMemberScores
-                                .map(p => `${p.name} (${p.score})`)
-                                .join('\n');
-                            teamStats[team.id].scoresByCompetition[competitionId] = topPerformersString;
-                        } else {
-                            teamStats[team.id].scoresByCompetition[competitionId] = "-";
+                // Get the top 3 winners
+                const topWinners = individualScores.slice(0, 3);
+
+                // Mark the rank for each winning team
+                topWinners.forEach((winner, index) => {
+                    const rank = index + 1;
+                    const teamId = winner.teamId;
+                    if (teamId && teamStats[teamId]) {
+                        const currentBestRank = teamStats[teamId].scoresByCompetition[competitionId];
+                        // If the team already has a rank, only update if the new rank is better (lower number)
+                        if (typeof currentBestRank !== 'number' || rank < currentBestRank) {
+                            teamStats[teamId].scoresByCompetition[competitionId] = rank;
                         }
                     }
                 });

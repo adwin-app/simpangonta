@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../../services/api';
 import { LeaderboardEntry, Competition, Score, Team } from '../../types';
@@ -34,7 +35,7 @@ const LeaderboardTable: React.FC<{ leaderboard: LeaderboardEntry[], competitions
                     <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Perak">🥈</th>
                     <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Perunggu">🥉</th>
                     {competitions.map(c => (
-                        <th key={c.id} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate" style={{maxWidth: '150px'}}>{c.name}</th>
+                        <th key={c.id} scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider truncate" style={{maxWidth: '150px'}}>{c.name}</th>
                     ))}
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Nilai</th>
                 </tr>
@@ -58,19 +59,19 @@ const LeaderboardTable: React.FC<{ leaderboard: LeaderboardEntry[], competitions
                         {competitions.map(c => {
                             const scoreValue = entry.scoresByCompetition[c.id];
                             return (
-                                <td key={c.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
-                                    {c.isIndividual ? 
-                                        (
-                                            typeof scoreValue === 'string' && scoreValue !== '-' ? (
-                                                <div className="text-xs whitespace-pre-line" style={{ lineHeight: 1.4 }}>
-                                                    {scoreValue}
-                                                </div>
-                                            ) : (
-                                                <span className="text-gray-500">{scoreValue || '-'}</span>
-                                            )
-                                        ) : 
-                                        (scoreValue || '-')
-                                    }
+                                <td key={c.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium text-center">
+                                    {c.isIndividual ? (
+                                        typeof scoreValue === 'number' && scoreValue > 0 && scoreValue <= 3 ? (
+                                            <div className="flex items-center justify-center font-bold">
+                                                <MedalIcon rank={scoreValue} />
+                                                <span className="ml-1">{scoreValue}</span>
+                                            </div>
+                                        ) : (
+                                            <span className="text-gray-400">-</span>
+                                        )
+                                    ) : (
+                                        scoreValue || '-'
+                                    )}
                                 </td>
                             );
                         })}

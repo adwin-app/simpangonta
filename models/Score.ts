@@ -1,4 +1,5 @@
 
+
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import { Score as IScore } from '../types';
 
@@ -17,26 +18,10 @@ const ScoreSchema = new Schema<IScoreDocument>({
 });
 
 
-// 1. Indeks unik untuk skor tim (di mana memberName adalah null atau tidak ada)
-ScoreSchema.index(
-    { teamId: 1, competitionId: 1, judgeId: 1 }, 
-    { 
-      unique: true,
-      // Indeks ini hanya berlaku untuk dokumen di mana memberName adalah null atau tidak ada.
-      partialFilterExpression: { memberName: null } 
-    }
-);
-
-// 2. Indeks unik untuk skor individu (di mana memberName adalah string non-null)
-ScoreSchema.index(
-    { teamId: 1, competitionId: 1, judgeId: 1, memberName: 1 },
-    { 
-      unique: true, 
-      // Indeks ini hanya berlaku untuk dokumen di mana memberName ada dan bukan null.
-      partialFilterExpression: { memberName: { $exists: true, $ne: null } } 
-    }
-);
-
+// The unique index has been removed. The application's `findOneAndUpdate` logic in the API
+// is sufficient to handle the upsert behavior, preventing duplicate scores for the
+// same team-competition-judge-participant combination. Removing the explicit index
+// resolves conflicts when submitting multiple individual scores from the same team.
 
 const ScoreModel: Model<IScoreDocument> = (mongoose.models.Score as Model<IScoreDocument>) || mongoose.model<IScoreDocument>('Score', ScoreSchema);
 
