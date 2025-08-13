@@ -72,7 +72,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                 filteredTeams.forEach(team => {
                     if (teamStats[team.id]) {
-                       teamStats[team.id].scoresByCompetition[competitionId] = "Individu";
+                       const teamMemberScores = individualScores
+                            .filter(s => s.teamId === team.id && s.memberName)
+                            .map(s => ({ name: s.memberName, score: s.totalScore }))
+                            .slice(0, 3); // Ambil 3 teratas dari tim ini
+
+                        if (teamMemberScores.length > 0) {
+                            const topPerformersString = teamMemberScores
+                                .map(p => `${p.name} (${p.score})`)
+                                .join('\n');
+                            teamStats[team.id].scoresByCompetition[competitionId] = topPerformersString;
+                        } else {
+                            teamStats[team.id].scoresByCompetition[competitionId] = "-";
+                        }
                     }
                 });
 

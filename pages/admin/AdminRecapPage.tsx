@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../../services/api';
 import { LeaderboardEntry, Competition, Score, Team } from '../../types';
@@ -54,14 +55,25 @@ const LeaderboardTable: React.FC<{ leaderboard: LeaderboardEntry[], competitions
                         <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-800">{entry.medals.gold}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-800">{entry.medals.silver}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-800">{entry.medals.bronze}</td>
-                        {competitions.map(c => (
-                            <td key={c.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
-                                {c.isIndividual ? 
-                                    <span className="inline-flex items-center text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800"><UsersIcon className="w-3 h-3 mr-1"/>Individu</span> : 
-                                    (entry.scoresByCompetition[c.id] || '-')
-                                }
-                            </td>
-                        ))}
+                        {competitions.map(c => {
+                            const scoreValue = entry.scoresByCompetition[c.id];
+                            return (
+                                <td key={c.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
+                                    {c.isIndividual ? 
+                                        (
+                                            typeof scoreValue === 'string' && scoreValue !== '-' ? (
+                                                <div className="text-xs whitespace-pre-line" style={{ lineHeight: 1.4 }}>
+                                                    {scoreValue}
+                                                </div>
+                                            ) : (
+                                                <span className="text-gray-500">{scoreValue || '-'}</span>
+                                            )
+                                        ) : 
+                                        (scoreValue || '-')
+                                    }
+                                </td>
+                            );
+                        })}
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold" style={{color: AppColors.primary}}>
                             {entry.totalScore}
                         </td>

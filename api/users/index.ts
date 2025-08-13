@@ -27,8 +27,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const competitionMap = new Map(competitions.map(c => [c._id.toString(), String(c.name)]));
 
                 const usersWithCompetitionNames = users.map(user => {
-                    const compId = user.assignedCompetitionId;
-                    const competitionName = compId == null ? undefined : competitionMap.get(String(compId));
+                    const compId = user.assignedCompetitionId as string | null;
+                    const competitionName = compId ? competitionMap.get(compId) : undefined;
                     return toUserDTO(user, competitionName);
                 });
                 
